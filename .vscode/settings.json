@@ -5,7 +5,9 @@
         "source.fixAll.eslint": "explicit"
     },
     "cSpell.words": [
+        "autoask",
         "contrib",
+        "creatordate",
         "Dedup",
         "Fdpass",
         "Forwardings",
@@ -15,6 +17,7 @@
         "Keysign",
         "mykey",
         "opensshremotes",
+        "softprops",
         "thirdparty",
         "vscdb"
     ],
