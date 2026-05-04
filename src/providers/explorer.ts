@@ -267,13 +267,10 @@ export async function connectHost(
 ): Promise<void> {
   await setRemoteSSHConfigFile(configFile)
 
-  const command = reuseWindow
-    ? 'opensshremotes.openEmptyWindowInCurrentWindow'
-    : 'opensshremotes.openEmptyWindow'
-
   await commands.executeCommand(
-    command,
-    Uri.parse(`vscode-remote://ssh-remote+${hostName}`),
+    'vscode.openFolder',
+    Uri.parse(`vscode-remote://ssh-remote+${hostName}/`),
+    !reuseWindow,
   )
 
   provider.refresh()
