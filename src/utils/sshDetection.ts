@@ -37,23 +37,25 @@ export function decodeSSHHostname(hostname: string): string {
       const hostData = JSON.parse(decoded)
       hostname = hostData.hostName || hostname
     }
-    catch {}
+    catch { }
   }
 
   return hostname
 }
 
 export function getCurrentSSHFolder(): string | undefined {
-  // Get current workspace folder path if in SSH session
   if (env.remoteName !== 'ssh-remote')
     return undefined
 
-  const workspaceFolder = workspace.workspaceFolders?.[0]
-  if (!workspaceFolder)
-    return undefined
+  // .code-workspace files
+  if (workspace.workspaceFile) {
+    return workspace.workspaceFile.path
+  }
 
-  // The URI path for remote workspaces
-  const folderPath = workspaceFolder.uri.path
-  // console.log(`[getCurrentSSHFolder] Current folder path: "${folderPath}"`)
-  return folderPath
+  const workspaceFolder = workspace.workspaceFolders?.[0]
+  if (!workspaceFolder) {
+    return undefined
+  }
+
+  return workspaceFolder.uri.path
 }
