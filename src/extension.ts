@@ -1,5 +1,5 @@
 import type { Disposable, ExtensionContext } from 'vscode'
-import { commands, Position, Range, SnippetString, Uri, window, workspace } from 'vscode'
+import { commands, env, Position, Range, SnippetString, Uri, window, workspace } from 'vscode'
 import { copyPublicKey, openUserConfig } from './functions'
 import {
   connectFolder,
@@ -22,7 +22,7 @@ export function activate(context: ExtensionContext) {
   const disposable: Disposable[] = []
 
   // Tree view
-  const explorerProvider = new SSHExplorerProvider()
+  const explorerProvider = new SSHExplorerProvider(context)
   const treeView = window.createTreeView('vscode-ssh-config-all-in-one-hosts', {
     treeDataProvider: explorerProvider,
     showCollapseAll: false,
@@ -368,6 +368,35 @@ export function activate(context: ExtensionContext) {
       'vscode-ssh-config-all-in-one.removeRecentFolder',
       async (item: { hostName: string, folder: string }) => {
         explorerProvider.removeRecentFolder(item.hostName, item.folder)
+      },
+    ),
+  )
+
+  // Copy host alias (ssh myserver)
+  disposable.push(
+    commands.registerCommand(
+      'vscode-ssh-config-all-in-one.copyHostAlias',
+      async (item: { hostName: string }) => {
+        await env.clipboard.writeText(item.hostName)
+        window.showInformationMessage(`Copied: ${item.hostName}`)
+      },
+    ),
+  )
+
+  // Copy full SSH command built from config fields
+  disposable.push(
+    commands.registerCommand(
+      'vscode-ssh-config-all-in-one.copySSHCommand',
+      async (item: { hostName: string, description?: string, user?: string, port?: string, identityFile?: string }) => {
+        const target = item.description || item.hostName
+        const userPrefix = item.user ? `${item.user}@` : ''
+        let cmd = `ssh ${userPrefix}${target}`
+        if (item.port && item.port !== '22')
+          cmd += ` -p ${item.port}`
+        if (item.identityFile)
+          cmd += ` -i ${item.identityFile}`
+        await env.clipboard.writeText(cmd)
+        window.showInformationMessage(`Copied: ${cmd}`)
       },
     ),
   )

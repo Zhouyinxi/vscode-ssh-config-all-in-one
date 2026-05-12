@@ -6,6 +6,9 @@ import { env, workspace } from 'vscode'
 export interface HostEntry {
   host: string
   hostname?: string
+  user?: string
+  port?: string
+  identityFile?: string
   configFile?: string
   lineNumber?: number
 }
@@ -325,8 +328,23 @@ async function parseSSHConfigFile(configPath: string): Promise<HostEntry[]> {
 
     if (currentHost) {
       const matchHostname = /^\s*HostName\s+(\S.*)$/i.exec(trimmed)
-      if (matchHostname)
+      if (matchHostname) {
         currentHost.hostname = matchHostname[1].trim()
+        continue
+      }
+      const matchUser = /^\s*User\s+(\S.*)$/i.exec(trimmed)
+      if (matchUser) {
+        currentHost.user = matchUser[1].trim()
+        continue
+      }
+      const matchPort = /^\s*Port\s+(\S.*)$/i.exec(trimmed)
+      if (matchPort) {
+        currentHost.port = matchPort[1].trim()
+        continue
+      }
+      const matchIdentityFile = /^\s*IdentityFile\s+(\S.*)$/i.exec(trimmed)
+      if (matchIdentityFile)
+        currentHost.identityFile = matchIdentityFile[1].trim()
     }
   }
 

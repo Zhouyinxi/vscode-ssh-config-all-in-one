@@ -10,6 +10,9 @@ export class SSHHostItem extends TreeItem {
     isConnected: boolean = false,
     isCollapsed: boolean = false,
     nonce?: number,
+    public readonly user?: string,
+    public readonly port?: string,
+    public readonly identityFile?: string,
   ) {
     // Determine collapsible state based on whether it has folders and collapse state
     let state: TreeItemCollapsibleState

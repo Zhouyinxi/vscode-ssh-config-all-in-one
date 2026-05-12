@@ -235,6 +235,14 @@
         "command": "vscode-ssh-config-all-in-one.locateCurrentHost",
         "title": "Locate Current Host",
         "icon": "$(target)"
+      },
+      {
+        "command": "vscode-ssh-config-all-in-one.copyHostAlias",
+        "title": "Copy Host Alias"
+      },
+      {
+        "command": "vscode-ssh-config-all-in-one.copySSHCommand",
+        "title": "Copy SSH Command"
       }
     ],
     "menus": {
@@ -335,6 +343,16 @@
           "command": "vscode-ssh-config-all-in-one.sendPublicKey",
           "when": "view == vscode-ssh-config-all-in-one-hosts && viewItem =~ /host/",
           "group": "2_actions@2"
+        },
+        {
+          "command": "vscode-ssh-config-all-in-one.copyHostAlias",
+          "when": "view == vscode-ssh-config-all-in-one-hosts && viewItem =~ /host/",
+          "group": "2_copy@1"
+        },
+        {
+          "command": "vscode-ssh-config-all-in-one.copySSHCommand",
+          "when": "view == vscode-ssh-config-all-in-one-hosts && viewItem =~ /host/",
+          "group": "2_copy@2"
         },
         {
           "command": "vscode-ssh-config-all-in-one.removeHost",

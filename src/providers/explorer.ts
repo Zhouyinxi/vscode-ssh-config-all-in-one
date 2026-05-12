@@ -1,4 +1,4 @@
-import type { TreeDataProvider, TreeItem } from 'vscode'
+import type { ExtensionContext, TreeDataProvider, TreeItem } from 'vscode'
 import { commands, EventEmitter, languages, TreeItemCollapsibleState, Uri, window, workspace } from 'vscode'
 import { SSHConfigFileItem } from '../models/SSHConfigFileItem'
 import { SSHFolderItem } from '../models/SSHFolderItem'
@@ -9,6 +9,8 @@ import { clearRecentCache, getRecentSSHConnections } from '../utils/sshHistory'
 
 const t0 = () => performance.now()
 const dt = (start: number) => `${(performance.now() - start).toFixed(1)}ms`
+
+const EXCLUDED_FOLDERS_KEY = 'sshConfig.excludedFolders'
 
 export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new EventEmitter<TreeItem | undefined | null | void>()
@@ -22,11 +24,16 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
   private parsedConfigFilesCache: Awaited<ReturnType<typeof getSSHConfigFiles>> | null = null
   private allCollapsed = false
   private _nonce = 0
+  private excludedFolders: Set<string>
+
+  constructor(private readonly context: ExtensionContext) {
+    const saved = context.globalState.get<string[]>(EXCLUDED_FOLDERS_KEY, [])
+    this.excludedFolders = new Set(saved)
+  }
 
   refresh(): void {
     this.configFilesCache = []
     this.hostsCache.clear()
-    this.excludedFolders.clear()
     this.currentHostCache = undefined
     this.recentFoldersLoaded = false
     this.recentFolders.clear()
@@ -146,6 +153,9 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
         isConnected,
         this.allCollapsed,
         this._nonce,
+        e.user,
+        e.port,
+        e.identityFile,
       )
     })
 
@@ -158,13 +168,25 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
   private async ensureRecentFolders(): Promise<void> {
     if (!this.recentFoldersLoaded) {
       const ts = t0()
-      this.recentFolders = await getRecentSSHConnections()
+      const raw = await getRecentSSHConnections()
+      // Apply persistent exclusions
+      if (this.excludedFolders.size > 0) {
+        for (const [host, folders] of raw) {
+          const filtered = folders.filter(f => !this.excludedFolders.has(`${host}:${f}`))
+          if (filtered.length === 0)
+            raw.delete(host)
+          else
+            raw.set(host, filtered)
+        }
+      }
+      this.recentFolders = raw
       this.recentFoldersLoaded = true
-      // console.log(`[SSH Config] loadRecentFolders: ${dt(ts)}`)
     }
   }
 
-  private excludedFolders: Set<string> = new Set()
+  private excludedFolderKey(hostName: string, folder: string): string {
+    return `${hostName}:${folder}`
+  }
 
   findHostItem(hostName: string): SSHHostItem | undefined {
     const activeConfigFile = workspace.getConfiguration('remote.SSH').get<string>('configFile')
@@ -189,7 +211,10 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
   }
 
   removeRecentFolder(hostName: string, folder: string): void {
-    this.excludedFolders.add(`${hostName}:${folder}`)
+    const key = this.excludedFolderKey(hostName, folder)
+    this.excludedFolders.add(key)
+    this.context.globalState.update(EXCLUDED_FOLDERS_KEY, [...this.excludedFolders])
+
     const folders = this.recentFolders.get(hostName)
     if (folders) {
       const idx = folders.indexOf(folder)
