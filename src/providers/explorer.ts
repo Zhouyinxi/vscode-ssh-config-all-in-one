@@ -286,7 +286,22 @@ async function setRemoteSSHConfigFile(configFile: string | undefined): Promise<v
 
 export async function connectHost(
   hostName: string,
-  provider: SSHExplorerProvider,
+  _provider: SSHExplorerProvider,
+  reuseWindow: boolean,
+  configFile?: string,
+): Promise<void> {
+  await setRemoteSSHConfigFile(configFile)
+
+  await commands.executeCommand('vscode.newWindow', {
+    remoteAuthority: `ssh-remote+${hostName}`,
+    reuseWindow,
+  })
+}
+
+export async function connectFolder(
+  hostName: string,
+  folder: string,
+  _provider: SSHExplorerProvider,
   reuseWindow: boolean,
   configFile?: string,
 ): Promise<void> {
@@ -294,28 +309,6 @@ export async function connectHost(
 
   await commands.executeCommand(
     'vscode.openFolder',
-    Uri.parse(`vscode-remote://ssh-remote+${hostName}/`),
-    !reuseWindow,
-  )
-
-  provider.refresh()
-}
-
-export async function connectFolder(
-  hostName: string,
-  folder: string,
-  provider: SSHExplorerProvider,
-  reuseWindow: boolean,
-  configFile?: string,
-): Promise<void> {
-  await setRemoteSSHConfigFile(configFile)
-
-  const command = reuseWindow
-    ? 'vscode.openFolder'
-    : 'vscode.openFolder'
-
-  await commands.executeCommand(
-    command,
     Uri.parse(`vscode-remote://ssh-remote+${hostName}${folder}`),
     !reuseWindow,
   )

@@ -19,7 +19,7 @@ export async function getCurrentSSHHost(): Promise<string | undefined> {
 
     if (authority.startsWith('ssh-remote+')) {
       const hostname = authority.substring('ssh-remote+'.length)
-      return await decodeSSHHostname(hostname)
+      return decodeSSHHostname(hostname)
     }
   }
 
