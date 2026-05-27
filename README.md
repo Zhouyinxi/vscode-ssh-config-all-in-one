@@ -24,6 +24,19 @@
 - **Quick Connect CodeLens**: Provides "Connect in Current Window..." and "Connect in New Window..." inline buttons above each `Host` declaration. Seamlessly connects to the server using the official `ms-vscode-remote.remote-ssh` extension.
   - ![demo of quick connect code lens](https://github.com/user-attachments/assets/eceab524-fcc2-47f0-9ba5-1f2b9b098840)
 - **SSH Config Auto-Detection**: Files whose name contains "config" are automatically detected as SSH Config when their content matches SSH Config patterns (e.g. `Host`, `HostName`, `IdentityFile` directives). Can be disabled via `sshConfigAllInOne.detection.enabled`.
+- **Fuzzy Host Search**: The search command supports relevance-ranked matching with extended syntax:
+
+  | Input | Behavior |
+  |---|---|
+  | `prod` | fuzzy match — finds `prod-api`, `production`, `my-prod-box` |
+  | `prod jump` | AND — host must match both tokens |
+  | `"prod-api"` | exact phrase match |
+  | `^prod` | prefix — alias starts with `prod` |
+  | `.example.com$` | suffix — hostname ends with `.example.com` |
+  | `!bastion` | exclude hosts matching `bastion` |
+  | `prod \| staging` | OR — matches either |
+
+  Switch back to simple substring matching via `sshConfigAllInOne.search.mode: simple`.
 - **Universal Formatter**: Formats your SSH config regardless of where it's opened (local, remote workspace, or even unsaved untitled files).
 - **Autocompletion**: Provides rich suggestions as you type in an SSH config file.
 - **Syntax Highlighting**: Enhanced and refined syntax grammar.

@@ -16,6 +16,7 @@ import {
 } from './providers'
 import { parseSSHConfig } from './utils/sshConfig'
 import { getCurrentSSHHost } from './utils/sshDetection'
+import { invalidateFuseCache, searchItems } from './utils/searchHosts'
 
 export function activate(context: ExtensionContext) {
   const subscriptions = context.subscriptions
@@ -85,9 +86,9 @@ export function activate(context: ExtensionContext) {
   disposable.push(
     commands.registerCommand('vscode-ssh-config-all-in-one.searchHosts', async () => {
       const allHosts = await parseSSHConfig()
+      invalidateFuseCache()
 
-      interface HostPickItem { label: string, description?: string, detail?: string, hostName: string, configFile?: string, lineNumber?: number }
-      const toItem = (h: typeof allHosts[number]): HostPickItem => ({
+      const toItem = (h: typeof allHosts[number]) => ({
         label: h.host,
         description: h.hostname,
         detail: h.configFile,
@@ -96,32 +97,21 @@ export function activate(context: ExtensionContext) {
         lineNumber: h.lineNumber,
       })
 
-      const allItems: HostPickItem[] = allHosts.map(toItem)
+      const allItems = allHosts.map(toItem)
 
-      const quickPick = window.createQuickPick<HostPickItem>()
-      quickPick.placeholder = 'Search SSH hosts...'
-      quickPick.matchOnDescription = true
-      quickPick.matchOnDetail = true
+      const quickPick = window.createQuickPick<ReturnType<typeof toItem>>()
+      quickPick.placeholder = 'Search SSH hosts... (fuzzy: "exact", ^prefix, suffix$, !exclude, a | b)'
+      quickPick.matchOnDescription = false
+      quickPick.matchOnDetail = false
       quickPick.items = allItems
-      // quickPick.items = allItems.slice(0, 10)
 
       quickPick.onDidChangeValue((value) => {
-        if (!value) {
-          quickPick.items = allItems
-          // quickPick.items = allItems.slice(0, 10)
-          return
-        }
-        const lower = value.toLowerCase()
-        const scored = allItems
-          .map((item) => {
-            const hostMatch = item.hostName.toLowerCase().includes(lower) ? 2 : 0
-            const descMatch = (item.description ?? '').toLowerCase().includes(lower) ? 1 : 0
-            return { item, score: hostMatch + descMatch }
-          })
-          .filter(s => s.score > 0)
-          .sort((a, b) => b.score - a.score)
-        // quickPick.items = scored.slice(0, 10).map(s => s.item)
-        quickPick.items = scored.map(s => s.item)
+        const results = searchItems(allItems, value)
+        // alwaysShow bypasses VS Code's built-in label filter so our own
+        // scoring is the sole source of truth for what gets displayed.
+        quickPick.items = value
+          ? results.map(item => ({ ...item, alwaysShow: true }))
+          : allItems
       })
 
       quickPick.onDidAccept(async () => {
@@ -131,8 +121,6 @@ export function activate(context: ExtensionContext) {
         if (!selected)
           return
 
-        // Ensure explorer is loaded and reveal the host
-        // await commands.executeCommand('vscode-ssh-config-all-in-one-hosts.focus')
         await explorerProvider.getConfigFiles()
         const item = explorerProvider.findHostItem(selected.hostName)
         if (item) {

@@ -112,6 +112,20 @@
           ],
           "order": 6,
           "markdownDescription": "How many levels of `Include` directives to follow.\n\n- **0**: No includes processed\n- **1**: Only direct includes (default)\n- **unlimited**: Recursive includes with cycle detection"
+        },
+        "sshConfigAllInOne.search.mode": {
+          "type": "string",
+          "default": "fuzzy",
+          "enum": [
+            "fuzzy",
+            "simple"
+          ],
+          "enumDescriptions": [
+            "Fuzzy search: supports partial matches, multi-word AND queries, quoted exact phrases (\"web server\"), prefix (^web), suffix (server$), inverse (!web), and OR (web | api)",
+            "Simple search: original substring match on host alias and hostname"
+          ],
+          "order": 7,
+          "markdownDescription": "Search mode for the host explorer.\n\n- **fuzzy** (default): relevance-ranked search with extended syntax — `\"exact\"`, `^prefix`, `suffix$`, `!exclude`, `term1 term2` (AND), `a | b` (OR)\n- **simple**: original substring match"
         }
       }
     },
