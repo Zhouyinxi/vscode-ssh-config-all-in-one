@@ -15,9 +15,11 @@ interface Range {
 }
 
 export type HostPickItemResult = HostPickItem & {
-  labelHighlights?: Range[]
-  descriptionHighlights?: Range[]
-  detailHighlights?: Range[]
+  highlights?: {
+    label?: [number, number][]
+    description?: [number, number][]
+    detail?: [number, number][]
+  }
 }
 
 type TokenType = 'include' | 'exclude' | 'prefix' | 'suffix' | 'exact'
@@ -105,9 +107,9 @@ function scoreToken(haystack: string, token: Token, weight: number): number {
   return token.type === 'prefix' ? weight * 2 : weight
 }
 
-function fuzzyMatch(item: HostPickItem, query: string): { score: number, labelHighlights: Range[], descriptionHighlights: Range[], detailHighlights: Range[] } | null {
+function fuzzyMatch(item: HostPickItem, query: string): { score: number, label: Range[], description: Range[], detail: Range[] } | null {
   const branches = query.split('|').map(p => p.trim()).filter(Boolean)
-  let best: { score: number, labelHighlights: Range[], descriptionHighlights: Range[], detailHighlights: Range[] } | null = null
+  let best: { score: number, label: Range[], description: Range[], detail: Range[] } | null = null
 
   for (const branch of branches) {
     const tokens = parseTokens(branch)
@@ -154,9 +156,9 @@ function fuzzyMatch(item: HostPickItem, query: string): { score: number, labelHi
     if (valid && branchScore > (best?.score ?? 0)) {
       best = {
         score: branchScore,
-        labelHighlights: mergeRanges(labelRanges),
-        descriptionHighlights: mergeRanges(descRanges),
-        detailHighlights: mergeRanges(detailRanges),
+        label: mergeRanges(labelRanges),
+        description: mergeRanges(descRanges),
+        detail: mergeRanges(detailRanges),
       }
     }
   }
@@ -174,13 +176,14 @@ export function invalidateFuseCache(): void {
 }
 
 export function searchItems(items: HostPickItem[], query: string): HostPickItemResult[] {
-  if (!query)
+  const trimmed = query.trim()
+  if (!trimmed)
     return items
 
   const mode = workspace.getConfiguration('sshConfigAllInOne.search').get<string>('mode', 'fuzzy')
 
   if (mode === 'simple') {
-    const lower = query.toLowerCase()
+    const lower = trimmed.toLowerCase()
     return items
       .map(item => ({ item, score: simpleScore(item, lower) }))
       .filter(s => s.score > 0)
@@ -190,15 +193,17 @@ export function searchItems(items: HostPickItem[], query: string): HostPickItemR
 
   return items
     .map((item) => {
-      const match = fuzzyMatch(item, query)
+      const match = fuzzyMatch(item, trimmed)
       return match ? { item, ...match } : null
     })
-    .filter((s): s is { item: HostPickItem, score: number, labelHighlights: Range[], descriptionHighlights: Range[], detailHighlights: Range[] } => s !== null)
+    .filter((s): s is { item: HostPickItem, score: number, label: Range[], description: Range[], detail: Range[] } => s !== null)
     .sort((a, b) => b.score - a.score)
     .map(s => ({
       ...s.item,
-      labelHighlights: s.labelHighlights.length > 0 ? s.labelHighlights : undefined,
-      descriptionHighlights: s.descriptionHighlights.length > 0 ? s.descriptionHighlights : undefined,
-      detailHighlights: s.detailHighlights.length > 0 ? s.detailHighlights : undefined,
+      highlights: {
+        label: s.label.length > 0 ? s.label.map(r => [r.start, r.end] as [number, number]) : undefined,
+        description: s.description.length > 0 ? s.description.map(r => [r.start, r.end] as [number, number]) : undefined,
+        detail: s.detail.length > 0 ? s.detail.map(r => [r.start, r.end] as [number, number]) : undefined,
+      },
     }))
 }

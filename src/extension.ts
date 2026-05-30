@@ -14,9 +14,9 @@ import {
   SSHHoverProvider,
   SSHIncludeDiagnosticsProvider,
 } from './providers'
+import { invalidateFuseCache, searchItems } from './utils/searchHosts'
 import { parseSSHConfig } from './utils/sshConfig'
 import { getCurrentSSHHost } from './utils/sshDetection'
-import { invalidateFuseCache, searchItems } from './utils/searchHosts'
 
 export function activate(context: ExtensionContext) {
   const subscriptions = context.subscriptions
