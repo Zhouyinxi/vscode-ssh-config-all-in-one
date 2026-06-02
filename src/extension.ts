@@ -100,7 +100,7 @@ export function activate(context: ExtensionContext) {
       const allItems = allHosts.map(toItem)
 
       const quickPick = window.createQuickPick<ReturnType<typeof toItem>>()
-      quickPick.placeholder = 'Search SSH hosts... (fuzzy: "exact", ^prefix, suffix$, !exclude, a | b)'
+      quickPick.placeholder = 'Search SSH hosts... (fuzzy: "exact" or \'exact\', ^prefix, suffix$, !exclude, a | b)'
       quickPick.matchOnDescription = false
       quickPick.matchOnDetail = false
       quickPick.items = allItems

@@ -30,7 +30,7 @@
   |---|---|
   | `prod` | fuzzy match — finds `prod-api`, `production`, `my-prod-box` |
   | `prod jump` | AND — host must match both tokens |
-  | `"prod-api"` | exact phrase match |
+  | `"prod-api"` or `'prod-api'` | exact phrase match |
   | `^prod` | prefix — alias starts with `prod` |
   | `.example.com$` | suffix — hostname ends with `.example.com` |
   | `!bastion` | exclude hosts matching `bastion` |
