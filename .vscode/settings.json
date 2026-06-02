@@ -9,6 +9,7 @@
         "contrib",
         "creatordate",
         "Dedup",
+        "dets",
         "Fdpass",
         "Forwardings",
         "GSSAPI",

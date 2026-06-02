@@ -106,12 +106,19 @@ export function activate(context: ExtensionContext) {
       quickPick.items = allItems
 
       quickPick.onDidChangeValue((value) => {
+        if (!value.trim()) {
+          quickPick.items = allItems
+          return
+        }
         const results = searchItems(allItems, value)
-        // alwaysShow bypasses VS Code's built-in label filter so our own
-        // scoring is the sole source of truth for what gets displayed.
-        quickPick.items = value
-          ? results.map(item => ({ ...item, alwaysShow: true }))
-          : allItems
+        // Extract first plain token (strip operators/quotes) for VS Code's
+        // built-in label highlight. Fall back to alwaysShow-only if empty.
+        const firstToken = value.trim().replace(/"/g, ' ').trim().split(/\s+/).find(t => t.replace(/^[!^]|\$$/g, '').length > 0)?.replace(/^[!^]|\$$/g, '') ?? ''
+        quickPick.items = results.map(item => ({
+          ...item,
+          ...(firstToken ? { filterText: firstToken } : {}),
+          alwaysShow: true,
+        }))
       })
 
       quickPick.onDidAccept(async () => {

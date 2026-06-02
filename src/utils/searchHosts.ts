@@ -36,7 +36,8 @@ function parseTokens(part: string): Token[] {
   // eslint-disable-next-line no-cond-assign
   while ((m = re.exec(part)) !== null) {
     if (m[1] !== undefined) {
-      tokens.push({ type: 'exact', value: m[1].toLowerCase() })
+      if (m[1])
+        tokens.push({ type: 'exact', value: m[1].toLowerCase() })
     }
     else {
       const t = m[2]

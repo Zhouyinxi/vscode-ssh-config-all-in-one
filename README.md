@@ -74,6 +74,7 @@ Host example
 - `sshConfigAllInOne.detection.enabled`: Automatically detect files as SSH Config when the filename contains "config" and the content matches SSH Config patterns. (Default: `true`)
 - `sshConfigAllInOne.include.mode`: How to handle hosts from files discovered via `Include` directives — `merge` (add to parent), `separate` (show as own entry), or `none`. (Default: `separate`)
 - `sshConfigAllInOne.include.maxDepth`: How many levels of `Include` directives to follow — `0`, `1`, or `unlimited`. (Default: `unlimited`)
+- `sshConfigAllInOne.search.mode`: Search mode for the host explorer — `fuzzy` (multi-token, quoted phrases, prefix/suffix/exclude operators, relevance ranking) or `simple` (original substring match). (Default: `fuzzy`)
 
 ## Acknowledgements
 
