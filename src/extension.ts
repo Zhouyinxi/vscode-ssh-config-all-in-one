@@ -113,7 +113,7 @@ export function activate(context: ExtensionContext) {
         const results = searchItems(allItems, value)
         // Extract first plain token (strip operators/quotes) for VS Code's
         // built-in label highlight. Fall back to alwaysShow-only if empty.
-        const firstToken = value.trim().replace(/"/g, ' ').trim().split(/\s+/).find(t => t.replace(/^[!^]|\$$/g, '').length > 0)?.replace(/^[!^]|\$$/g, '') ?? ''
+        const firstToken = value.trim().replace(/["']/g, ' ').trim().split(/\s+/).find(t => t.replace(/^[!^]|\$$/g, '').length > 0)?.replace(/^[!^]|\$$/g, '') ?? ''
         quickPick.items = results.map(item => ({
           ...item,
           ...(firstToken ? { filterText: firstToken } : {}),

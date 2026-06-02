@@ -31,7 +31,7 @@ interface Token {
 
 function parseTokens(part: string): Token[] {
   const tokens: Token[] = []
-  const re = /"([^"]*)"|(\S+)/g
+  const re = /["']([^"']*)["']|(\S+)/g
   let m: RegExpExecArray | null
   // eslint-disable-next-line no-cond-assign
   while ((m = re.exec(part)) !== null) {
