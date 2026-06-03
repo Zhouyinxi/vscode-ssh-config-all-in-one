@@ -24,6 +24,19 @@
 - **Quick Connect CodeLens**: Provides "Connect in Current Window..." and "Connect in New Window..." inline buttons above each `Host` declaration. Seamlessly connects to the server using the official `ms-vscode-remote.remote-ssh` extension.
   - ![demo of quick connect code lens](https://github.com/user-attachments/assets/eceab524-fcc2-47f0-9ba5-1f2b9b098840)
 - **SSH Config Auto-Detection**: Files whose name contains "config" are automatically detected as SSH Config when their content matches SSH Config patterns (e.g. `Host`, `HostName`, `IdentityFile` directives). Can be disabled via `sshConfigAllInOne.detection.enabled`.
+- **Fuzzy Host Search**: The search command supports relevance-ranked matching with extended syntax:
+
+  | Input | Behavior |
+  |---|---|
+  | `prod` | fuzzy match — finds `prod-api`, `production`, `my-prod-box` |
+  | `prod jump` | AND — host must match both tokens |
+  | `"prod-api"` or `'prod-api'` | exact phrase match |
+  | `^prod` | prefix — alias starts with `prod` |
+  | `.example.com$` | suffix — hostname ends with `.example.com` |
+  | `!bastion` | exclude hosts matching `bastion` |
+  | `prod \| staging` | OR — matches either |
+
+  Switch back to simple substring matching via `sshConfigAllInOne.search.mode: simple`.
 - **Universal Formatter**: Formats your SSH config regardless of where it's opened (local, remote workspace, or even unsaved untitled files).
 - **Autocompletion**: Provides rich suggestions as you type in an SSH config file.
 - **Syntax Highlighting**: Enhanced and refined syntax grammar.
@@ -61,6 +74,13 @@ Host example
 - `sshConfigAllInOne.detection.enabled`: Automatically detect files as SSH Config when the filename contains "config" and the content matches SSH Config patterns. (Default: `true`)
 - `sshConfigAllInOne.include.mode`: How to handle hosts from files discovered via `Include` directives — `merge` (add to parent), `separate` (show as own entry), or `none`. (Default: `separate`)
 - `sshConfigAllInOne.include.maxDepth`: How many levels of `Include` directives to follow — `0`, `1`, or `unlimited`. (Default: `unlimited`)
+- `sshConfigAllInOne.search.mode`: Search mode for the host explorer — `fuzzy` (multi-token, quoted phrases, prefix/suffix/exclude operators, relevance ranking) or `simple` (original substring match). (Default: `fuzzy`)
+
+## Tips
+
+It is recommended to move the `SSH Config All In One` panel from the separate `SSH Config All In One` view into the `Remote Explorer` container for easier access alongside your file explorer and remote connections. To do this, click, hold and drag the `SSH Config All In One` icon in the activity bar and drop it into the `Remote Explorer` panel. This may save you a slot in the activity bar and provide a more seamless experience when managing your SSH hosts and connections.
+
+![move-panel-demo](https://github.com/user-attachments/assets/cbb67c80-8d7e-46c4-abd6-d62b43d9bd13)
 
 ## Acknowledgements
 

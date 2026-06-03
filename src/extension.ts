@@ -14,6 +14,7 @@ import {
   SSHHoverProvider,
   SSHIncludeDiagnosticsProvider,
 } from './providers'
+import { invalidateFuseCache, searchItems } from './utils/searchHosts'
 import { parseSSHConfig } from './utils/sshConfig'
 import { getCurrentSSHHost } from './utils/sshDetection'
 
@@ -85,9 +86,9 @@ export function activate(context: ExtensionContext) {
   disposable.push(
     commands.registerCommand('vscode-ssh-config-all-in-one.searchHosts', async () => {
       const allHosts = await parseSSHConfig()
+      invalidateFuseCache()
 
-      interface HostPickItem { label: string, description?: string, detail?: string, hostName: string, configFile?: string, lineNumber?: number }
-      const toItem = (h: typeof allHosts[number]): HostPickItem => ({
+      const toItem = (h: typeof allHosts[number]) => ({
         label: h.host,
         description: h.hostname,
         detail: h.configFile,
@@ -96,32 +97,28 @@ export function activate(context: ExtensionContext) {
         lineNumber: h.lineNumber,
       })
 
-      const allItems: HostPickItem[] = allHosts.map(toItem)
+      const allItems = allHosts.map(toItem)
 
-      const quickPick = window.createQuickPick<HostPickItem>()
-      quickPick.placeholder = 'Search SSH hosts...'
-      quickPick.matchOnDescription = true
-      quickPick.matchOnDetail = true
+      const quickPick = window.createQuickPick<ReturnType<typeof toItem>>()
+      quickPick.placeholder = 'Search SSH hosts... (fuzzy: "exact" or \'exact\', ^prefix, suffix$, !exclude, a | b)'
+      quickPick.matchOnDescription = false
+      quickPick.matchOnDetail = false
       quickPick.items = allItems
-      // quickPick.items = allItems.slice(0, 10)
 
       quickPick.onDidChangeValue((value) => {
-        if (!value) {
+        if (!value.trim()) {
           quickPick.items = allItems
-          // quickPick.items = allItems.slice(0, 10)
           return
         }
-        const lower = value.toLowerCase()
-        const scored = allItems
-          .map((item) => {
-            const hostMatch = item.hostName.toLowerCase().includes(lower) ? 2 : 0
-            const descMatch = (item.description ?? '').toLowerCase().includes(lower) ? 1 : 0
-            return { item, score: hostMatch + descMatch }
-          })
-          .filter(s => s.score > 0)
-          .sort((a, b) => b.score - a.score)
-        // quickPick.items = scored.slice(0, 10).map(s => s.item)
-        quickPick.items = scored.map(s => s.item)
+        const results = searchItems(allItems, value)
+        // Extract first plain token (strip operators/quotes) for VS Code's
+        // built-in label highlight. Fall back to alwaysShow-only if empty.
+        const firstToken = value.trim().replace(/["']/g, ' ').trim().split(/\s+/).find(t => t.replace(/^[!^]|\$$/g, '').length > 0)?.replace(/^[!^]|\$$/g, '') ?? ''
+        quickPick.items = results.map(item => ({
+          ...item,
+          ...(firstToken ? { filterText: firstToken } : {}),
+          alwaysShow: true,
+        }))
       })
 
       quickPick.onDidAccept(async () => {
@@ -131,15 +128,25 @@ export function activate(context: ExtensionContext) {
         if (!selected)
           return
 
-        // Ensure explorer is loaded and reveal the host
-        // await commands.executeCommand('vscode-ssh-config-all-in-one-hosts.focus')
-        await explorerProvider.getConfigFiles()
-        const item = explorerProvider.findHostItem(selected.hostName)
-        if (item) {
-          await treeView.reveal(item, { expand: true, focus: true, select: true })
+        const onAccept = workspace.getConfiguration('sshConfigAllInOne.search').get<string>('onAccept', 'revealInExplorer')
+
+        if (onAccept === 'revealInExplorer' || onAccept === 'both') {
+          await explorerProvider.getConfigFiles()
+          const item = explorerProvider.findHostItem(selected.hostName)
+          if (item)
+            await treeView.reveal(item, { expand: true, focus: true, select: true })
         }
-        else if (selected.configFile && selected.lineNumber) {
-          await openConfigFile(selected.configFile, selected.lineNumber)
+
+        if (onAccept === 'openConfig' || onAccept === 'both') {
+          if (selected.configFile && selected.lineNumber)
+            await openConfigFile(selected.configFile, selected.lineNumber)
+        }
+
+        if (onAccept === 'revealInExplorer') {
+          await explorerProvider.getConfigFiles()
+          const item = explorerProvider.findHostItem(selected.hostName)
+          if (!item && selected.configFile && selected.lineNumber)
+            await openConfigFile(selected.configFile, selected.lineNumber)
         }
       })
 

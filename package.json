@@ -2,7 +2,7 @@
   "name": "vscode-ssh-config-all-in-one",
   "displayName": "SSH Config All In One",
   "description": "Enhanced SSH config editing, providing autocompletion, formatting, hover support, and Quick Connect actions to ms-vscode-remote.remote-ssh.",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "publisher": "hnrobert",
   "icon": "docs/images/icon.png",
   "license": "Apache-2.0",
@@ -112,6 +112,36 @@
           ],
           "order": 6,
           "markdownDescription": "How many levels of `Include` directives to follow.\n\n- **0**: No includes processed\n- **1**: Only direct includes (default)\n- **unlimited**: Recursive includes with cycle detection"
+        },
+        "sshConfigAllInOne.search.mode": {
+          "type": "string",
+          "default": "fuzzy",
+          "enum": [
+            "fuzzy",
+            "simple"
+          ],
+          "enumDescriptions": [
+            "Fuzzy search: supports partial matches, multi-word AND queries, quoted exact phrases (\"web server\"), prefix (^web), suffix (server$), inverse (!web), and OR (web | api)",
+            "Simple search: original substring match on host alias and hostname"
+          ],
+          "order": 7,
+          "markdownDescription": "Search mode for the host explorer.\n\n- **fuzzy** (default): relevance-ranked search with extended syntax — `\"exact\"`, `^prefix`, `suffix$`, `!exclude`, `term1 term2` (AND), `a | b` (OR)\n- **simple**: original substring match"
+        },
+        "sshConfigAllInOne.search.onAccept": {
+          "type": "string",
+          "default": "revealInExplorer",
+          "enum": [
+            "revealInExplorer",
+            "openConfig",
+            "both"
+          ],
+          "enumDescriptions": [
+            "Reveal the host in the SSH Explorer panel",
+            "Open the SSH config file at the host's definition",
+            "Reveal in Explorer and open the config file"
+          ],
+          "order": 8,
+          "markdownDescription": "What happens when you select a host from the search results.\n\n- **revealInExplorer** (default): reveal the host in the SSH Explorer panel\n- **openConfig**: open the SSH config file at the host's line\n- **both**: do both"
         }
       }
     },
