@@ -80,6 +80,8 @@ Host example
 
 It is recommended to move the `SSH Config All In One` panel from the separate `SSH Config All In One` view into the `Remote Explorer` container for easier access alongside your file explorer and remote connections. To do this, click, hold and drag the `SSH Config All In One` icon in the activity bar and drop it into the `Remote Explorer` panel. This may save you a slot in the activity bar and provide a more seamless experience when managing your SSH hosts and connections.
 
+<img width="1790" height="1461" alt="move-panel-demo" src="https://github.com/user-attachments/assets/cbb67c80-8d7e-46c4-abd6-d62b43d9bd13" />
+
 ## Acknowledgements
 
 This project is deeply based on the fantastic work by [jamief](https://github.com/jamief) on [vscode-ssh-config-enhanced](https://github.com/jamief/vscode-ssh-config-enhanced). Thanks for providing the original repository and all of its underlying core language features.
