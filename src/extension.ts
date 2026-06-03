@@ -128,13 +128,25 @@ export function activate(context: ExtensionContext) {
         if (!selected)
           return
 
-        await explorerProvider.getConfigFiles()
-        const item = explorerProvider.findHostItem(selected.hostName)
-        if (item) {
-          await treeView.reveal(item, { expand: true, focus: true, select: true })
+        const onAccept = workspace.getConfiguration('sshConfigAllInOne.search').get<string>('onAccept', 'revealInExplorer')
+
+        if (onAccept === 'revealInExplorer' || onAccept === 'both') {
+          await explorerProvider.getConfigFiles()
+          const item = explorerProvider.findHostItem(selected.hostName)
+          if (item)
+            await treeView.reveal(item, { expand: true, focus: true, select: true })
         }
-        else if (selected.configFile && selected.lineNumber) {
-          await openConfigFile(selected.configFile, selected.lineNumber)
+
+        if (onAccept === 'openConfig' || onAccept === 'both') {
+          if (selected.configFile && selected.lineNumber)
+            await openConfigFile(selected.configFile, selected.lineNumber)
+        }
+
+        if (onAccept === 'revealInExplorer') {
+          await explorerProvider.getConfigFiles()
+          const item = explorerProvider.findHostItem(selected.hostName)
+          if (!item && selected.configFile && selected.lineNumber)
+            await openConfigFile(selected.configFile, selected.lineNumber)
         }
       })
 

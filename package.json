@@ -126,6 +126,22 @@
           ],
           "order": 7,
           "markdownDescription": "Search mode for the host explorer.\n\n- **fuzzy** (default): relevance-ranked search with extended syntax — `\"exact\"`, `^prefix`, `suffix$`, `!exclude`, `term1 term2` (AND), `a | b` (OR)\n- **simple**: original substring match"
+        },
+        "sshConfigAllInOne.search.onAccept": {
+          "type": "string",
+          "default": "revealInExplorer",
+          "enum": [
+            "revealInExplorer",
+            "openConfig",
+            "both"
+          ],
+          "enumDescriptions": [
+            "Reveal the host in the SSH Explorer panel",
+            "Open the SSH config file at the host's definition",
+            "Reveal in Explorer and open the config file"
+          ],
+          "order": 8,
+          "markdownDescription": "What happens when you select a host from the search results.\n\n- **revealInExplorer** (default): reveal the host in the SSH Explorer panel\n- **openConfig**: open the SSH config file at the host's line\n- **both**: do both"
         }
       }
     },
