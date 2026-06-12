@@ -210,6 +210,18 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
     return undefined
   }
 
+  /**
+   * For an auto-detected config file, return the sorted list of parent files
+   * that include it. Returns undefined if the file is not auto-detected or
+   * has no recorded parents.
+   */
+  async getIncludedBy(filePath: string): Promise<string[] | undefined> {
+    if (!this.parsedConfigFilesCache)
+      this.parsedConfigFilesCache = await getSSHConfigFiles()
+    const cfg = this.parsedConfigFilesCache.find(f => f.path === filePath)
+    return cfg?.includedBy
+  }
+
   removeRecentFolder(hostName: string, folder: string): void {
     const key = this.excludedFolderKey(hostName, folder)
     this.excludedFolders.add(key)

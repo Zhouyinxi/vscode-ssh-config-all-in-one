@@ -138,8 +138,12 @@ export function activate(context: ExtensionContext) {
         }
 
         if (onAccept === 'openConfig' || onAccept === 'both') {
-          if (selected.configFile && selected.lineNumber)
-            await openConfigFile(selected.configFile, selected.lineNumber)
+          if (selected.configFile && selected.lineNumber) {
+            // For auto-detected files, open the parent (including) file instead
+            const includedBy = await explorerProvider.getIncludedBy(selected.configFile)
+            const targetFile = (includedBy && includedBy.length > 0) ? includedBy[0] : selected.configFile
+            await openConfigFile(targetFile, selected.lineNumber)
+          }
         }
 
         if (onAccept === 'revealInExplorer') {
