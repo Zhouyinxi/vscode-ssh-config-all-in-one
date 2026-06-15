@@ -1,11 +1,104 @@
-import { exec } from 'node:child_process'
-import { lstat, readFile } from 'node:fs'
-import { homedir, platform } from 'node:os'
+import { exec, spawn } from 'node:child_process'
+import { chmodSync, lstat, readFile, writeFileSync } from 'node:fs'
+import { homedir, platform, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
-import { Uri, window, workspace } from 'vscode'
+import { env, Uri, window, workspace } from 'vscode'
 
 const execAsync = promisify(exec)
+
+/**
+ * Launches the given command in the LOCAL machine's own terminal application.
+ *
+ * Inside a Remote-SSH window every integrated terminal runs on the remote
+ * host, so we cannot use the integrated terminal for local ssh-key copy.
+ * Because the extension is `extensionKind: ["ui"]`, the extension host runs
+ * locally, so `spawn()` here starts processes on the local machine. We write
+ * the command to a temporary script and let the OS open it in the local
+ * Terminal (macOS `.command`, Linux `.sh`, Windows `.cmd`), which provides a
+ * real PTY so ssh's interactive password prompt works.
+ *
+ * @returns true on success, false if launching failed.
+ */
+function launchLocalExternalTerminal(command: string): boolean {
+  const isWin = platform() === 'win32'
+  const isMac = platform() === 'darwin'
+  const stamp = Date.now()
+
+  try {
+    if (isWin) {
+      const file = join(tmpdir(), `ssh-copy-${stamp}.cmd`)
+      writeFileSync(file, `${command}\r\n@echo off\r\npause\r\n`)
+      spawn('cmd.exe', ['/c', 'start', '"SSH Copy ID"', file], {
+        detached: true,
+        shell: false,
+        stdio: 'ignore',
+      }).unref()
+    }
+    else {
+      const ext = isMac ? 'command' : 'sh'
+      const file = join(tmpdir(), `ssh-copy-${stamp}.${ext}`)
+      // A leading newline avoids the shell echoing the first line as a prompt.
+      writeFileSync(file, `#!/bin/sh\nset -e\n${command}\n`)
+      chmodSync(file, 0o755)
+      if (isMac) {
+        // `.command` files open in Terminal.app with a real PTY.
+        spawn('open', [file], { detached: true, stdio: 'ignore' }).unref()
+      }
+      else {
+        // Linux: try common terminal emulators in turn.
+        const terminals = [
+          ['x-terminal-emulator', ['-e', file]],
+          ['gnome-terminal', ['--', file]],
+          ['konsole', ['-e', file]],
+          ['xfce4-terminal', ['-x', file]],
+          ['xterm', ['-e', file]],
+        ] as const
+        let launched = false
+        for (const [bin, args] of terminals) {
+          try {
+            spawn(bin, [...args], { detached: true, stdio: 'ignore' }).unref()
+            launched = true
+            break
+          }
+          catch {
+            // try next
+          }
+        }
+        if (!launched)
+          throw new Error('No supported terminal emulator found')
+      }
+    }
+    return true
+  }
+  catch (error) {
+    window.showErrorMessage(`Failed to open a local terminal: ${error instanceof Error ? error.message : String(error)}`)
+    return false
+  }
+}
+
+/**
+ * Creates a terminal-like object that runs on the LOCAL machine.
+ *
+ * Inside a Remote-SSH window every integrated terminal runs on the remote
+ * host, so we open a LOCAL terminal application instead. When not in a remote
+ * session the integrated terminal is already local and is used as-is.
+ */
+function createLocalTerminal(name: string) {
+  if (env.remoteName) {
+    return {
+      show: () => {
+        window.showInformationMessage('Opening a terminal on your LOCAL machine...')
+      },
+      sendText: (text: string) => launchLocalExternalTerminal(text),
+    }
+  }
+  const term = window.createTerminal(name)
+  return {
+    show: () => term.show(true),
+    sendText: (text: string) => term.sendText(text, true),
+  }
+}
 
 let options: Promise<Option[]>
 
@@ -142,7 +235,7 @@ async function promptGenerateKeys(): Promise<boolean> {
     return false
   }
 
-  const terminal = window.createTerminal('SSH Key Generation')
+  const terminal = createLocalTerminal('SSH Key Generation')
   terminal.show()
   terminal.sendText('ssh-keygen -t ed25519 -C "$(whoami)@$(hostname)"')
 
@@ -213,7 +306,7 @@ export async function copyPublicKey(hostName: string) {
  * @param isLocalWindows - Whether the local machine is Windows.
  */
 async function copyPublicKeyToUnixRemote(hostName: string, publicKeyPath: string | null, isLocalWindows: boolean) {
-  const terminal = window.createTerminal('SSH Copy ID')
+  const terminal = createLocalTerminal('SSH Copy ID')
   terminal.show()
 
   if (isLocalWindows) {
@@ -254,7 +347,7 @@ async function copyPublicKeyToWindowsRemote(hostName: string, publicKeyPath: str
     return
   }
 
-  const terminal = window.createTerminal('SSH Copy ID')
+  const terminal = createLocalTerminal('SSH Copy ID')
   terminal.show()
 
   if (isLocalWindows) {
