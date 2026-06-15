@@ -296,13 +296,33 @@ async function setRemoteSSHConfigFile(configFile: string | undefined): Promise<v
   await cfg.update('configFile', configFile, true)
 }
 
+/**
+ * Resolves the config file that `remote.SSH.configFile` should point at.
+ *
+ * A host may live in an auto-detected (included) file, but the SSH client only
+ * reads a top-level config. For such hosts we point at the parent file that
+ * contains the matching `Include` directive (the alphabetically-first parent
+ * when there are several) instead of the included file itself.
+ */
+async function resolveRemoteConfigFile(
+  provider: SSHExplorerProvider,
+  configFile: string | undefined,
+): Promise<string | undefined> {
+  if (!configFile)
+    return configFile
+  const includedBy = await provider.getIncludedBy(configFile)
+  if (includedBy && includedBy.length > 0)
+    return includedBy[0]
+  return configFile
+}
+
 export async function connectHost(
   hostName: string,
-  _provider: SSHExplorerProvider,
+  provider: SSHExplorerProvider,
   reuseWindow: boolean,
   configFile?: string,
 ): Promise<void> {
-  await setRemoteSSHConfigFile(configFile)
+  await setRemoteSSHConfigFile(await resolveRemoteConfigFile(provider, configFile))
 
   await commands.executeCommand('vscode.newWindow', {
     remoteAuthority: `ssh-remote+${hostName}`,
@@ -313,11 +333,11 @@ export async function connectHost(
 export async function connectFolder(
   hostName: string,
   folder: string,
-  _provider: SSHExplorerProvider,
+  provider: SSHExplorerProvider,
   reuseWindow: boolean,
   configFile?: string,
 ): Promise<void> {
-  await setRemoteSSHConfigFile(configFile)
+  await setRemoteSSHConfigFile(await resolveRemoteConfigFile(provider, configFile))
 
   await commands.executeCommand(
     'vscode.openFolder',

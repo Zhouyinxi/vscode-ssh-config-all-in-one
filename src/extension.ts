@@ -138,12 +138,11 @@ export function activate(context: ExtensionContext) {
         }
 
         if (onAccept === 'openConfig' || onAccept === 'both') {
-          if (selected.configFile && selected.lineNumber) {
-            // For auto-detected files, open the parent (including) file instead
-            const includedBy = await explorerProvider.getIncludedBy(selected.configFile)
-            const targetFile = (includedBy && includedBy.length > 0) ? includedBy[0] : selected.configFile
-            await openConfigFile(targetFile, selected.lineNumber)
-          }
+          // Open the file where the host config is actually defined, at the
+          // host's own line — whether that's a default config or an included
+          // (auto-detected) config file.
+          if (selected.configFile && selected.lineNumber)
+            await openConfigFile(selected.configFile, selected.lineNumber)
         }
 
         if (onAccept === 'revealInExplorer') {

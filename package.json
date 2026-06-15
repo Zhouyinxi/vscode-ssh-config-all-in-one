@@ -283,33 +283,33 @@
           "group": "navigation@1"
         },
         {
-          "command": "vscode-ssh-config-all-in-one.openSettings",
+          "command": "vscode-ssh-config-all-in-one.addConfigFile",
           "when": "view == vscode-ssh-config-all-in-one-hosts",
           "group": "navigation@2"
         },
         {
-          "command": "vscode-ssh-config-all-in-one.addConfigFile",
-          "when": "view == vscode-ssh-config-all-in-one-hosts",
-          "group": "navigation@3"
-        },
-        {
           "command": "vscode-ssh-config-all-in-one.locateCurrentHost",
           "when": "view == vscode-ssh-config-all-in-one-hosts && vscode-ssh-config-all-in-one.hasRemote",
-          "group": "navigation@4"
+          "group": "navigation@3"
         },
         {
           "command": "vscode-ssh-config-all-in-one.refresh",
           "when": "view == vscode-ssh-config-all-in-one-hosts",
-          "group": "navigation@5"
+          "group": "navigation@4"
         },
         {
           "command": "vscode-ssh-config-all-in-one.toggleCollapseAll",
           "when": "view == vscode-ssh-config-all-in-one-hosts && !vscode-ssh-config-all-in-one.allCollapsed",
-          "group": "navigation@6"
+          "group": "navigation@5"
         },
         {
           "command": "vscode-ssh-config-all-in-one.toggleExpandAll",
           "when": "view == vscode-ssh-config-all-in-one-hosts && vscode-ssh-config-all-in-one.allCollapsed",
+          "group": "navigation@5"
+        },
+        {
+          "command": "vscode-ssh-config-all-in-one.openSettings",
+          "when": "view == vscode-ssh-config-all-in-one-hosts",
           "group": "navigation@6"
         }
       ],

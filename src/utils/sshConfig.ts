@@ -264,6 +264,34 @@ function parseIncludeDirectives(configPath: string): string[] {
   return includes
 }
 
+/**
+ * Finds the 1-based line number of the `Include` directive in `configPath`
+ * that resolves to `includedPath`. Returns undefined if not found.
+ */
+export function findIncludeLineNumber(configPath: string, includedPath: string): number | undefined {
+  let content: string
+  try {
+    content = readFileSync(configPath, 'utf8')
+  }
+  catch {
+    return undefined
+  }
+
+  const lines = content.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+    if (trimmed.startsWith('#') || trimmed === '')
+      continue
+    const match = /^Include\s+(\S+)$/i.exec(trimmed)
+    if (match) {
+      const resolved = resolveIncludePattern(match[1], dirname(configPath))
+      if (resolved.includes(includedPath))
+        return i + 1
+    }
+  }
+  return undefined
+}
+
 function resolveIncludePattern(pattern: string, configDir: string): string[] {
   let expanded: string
   if (pattern.startsWith('~')) {
