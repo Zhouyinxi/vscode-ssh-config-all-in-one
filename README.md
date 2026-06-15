@@ -10,31 +10,31 @@
 
 > Enhanced SSH Config Language Server extension for Visual Studio Code. Provides autocompletion, syntax highlighting, formatting, go to include file definitions, hover support, and quick connection actions for SSH config directives.
 
-![demo overall](https://github.com/user-attachments/assets/c6034a36-3c74-423f-896e-0277987f1973)
+![overall-demo](docs/images/overall-demo.png)
 
 ## Features
 
 - **SSH Host Explorer**: A dedicated activity bar panel that lists all your SSH hosts organized by config file, with inline actions to connect, edit, search, and manage hosts.
-  - ![demo open in config](https://github.com/user-attachments/assets/7cfa6c5b-626b-4100-abab-b79e490c7362)
+  - ![open-in-config-demo](docs/images/open-in-config-demo.png)
 - **Recent Folders**: The explorer shows recently connected remote folders under each host. Folders are loaded from VS Code's connection history and persist across sessions. Right-click any folder to permanently remove it from the list.
 - **Copy SSH Commands**: Right-click any host in the explorer to copy connection info to the clipboard:
   - **Copy Host Alias** — copies the host alias for use with `ssh <alias>`
   - **Copy SSH Command** — builds and copies the full command from the config (e.g. `ssh user@hostname -p 2222 -i ~/.ssh/key`)
-    ![demo copy ssh command](https://github.com/user-attachments/assets/3da9f28a-06d2-40fc-bf89-d8c61ba0d0d7)
+    ![copy-ssh-command-demo](docs/images/copy-ssh-command-demo.png)
 - **Quick Connect CodeLens**: Provides "Connect in Current Window..." and "Connect in New Window..." inline buttons above each `Host` declaration. Seamlessly connects to the server using the official `ms-vscode-remote.remote-ssh` extension.
-  - ![demo of quick connect code lens](https://github.com/user-attachments/assets/eceab524-fcc2-47f0-9ba5-1f2b9b098840)
+  - ![quick-connect-code-lens-demo](docs/images/quick-connect-code-lens-demo.png)
 - **SSH Config Auto-Detection**: Files whose name contains "config" are automatically detected as SSH Config when their content matches SSH Config patterns (e.g. `Host`, `HostName`, `IdentityFile` directives). Can be disabled via `sshConfigAllInOne.detection.enabled`.
 - **Fuzzy Host Search**: The search command supports relevance-ranked matching with extended syntax:
 
-  | Input | Behavior |
-  |---|---|
-  | `prod` | fuzzy match — finds `prod-api`, `production`, `my-prod-box` |
-  | `prod jump` | AND — host must match both tokens |
-  | `"prod-api"` or `'prod-api'` | exact phrase match |
-  | `^prod` | prefix — alias starts with `prod` |
-  | `.example.com$` | suffix — hostname ends with `.example.com` |
-  | `!bastion` | exclude hosts matching `bastion` |
-  | `prod \| staging` | OR — matches either |
+  | Input                        | Behavior                                                    |
+  |------------------------------|-------------------------------------------------------------|
+  | `prod`                       | fuzzy match — finds `prod-api`, `production`, `my-prod-box` |
+  | `prod jump`                  | AND — host must match both tokens                           |
+  | `"prod-api"` or `'prod-api'` | exact phrase match                                          |
+  | `^prod`                      | prefix — alias starts with `prod`                           |
+  | `.example.com$`              | suffix — hostname ends with `.example.com`                  |
+  | `!bastion`                   | exclude hosts matching `bastion`                            |
+  | `prod \| staging`            | OR — matches either                                         |
 
   Switch back to simple substring matching via `sshConfigAllInOne.search.mode: simple`.
 - **Universal Formatter**: Formats your SSH config regardless of where it's opened (local, remote workspace, or even unsaved untitled files).
@@ -80,7 +80,7 @@ Host example
 
 It is recommended to move the `SSH Config All In One` panel from the separate `SSH Config All In One` view into the `Remote Explorer` container for easier access alongside your file explorer and remote connections. To do this, click, hold and drag the `SSH Config All In One` icon in the activity bar and drop it into the `Remote Explorer` panel. This may save you a slot in the activity bar and provide a more seamless experience when managing your SSH hosts and connections.
 
-![move-panel-demo](https://github.com/user-attachments/assets/cbb67c80-8d7e-46c4-abd6-d62b43d9bd13)
+![move-panel-demo](docs/images/move-panel-demo.png)
 
 ## Acknowledgements
 
