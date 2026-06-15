@@ -19,6 +19,7 @@ export interface SSHConfigFile {
   hosts: HostEntry[]
   isCustom?: boolean
   isAutoDetected?: boolean
+  includedBy?: string[]
 }
 
 type IncludeMode = 'merge' | 'separate' | 'none'
@@ -181,6 +182,9 @@ async function resolveIncludedFiles(
   const result: SSHConfigFile[] = []
   const visited = new Set(knownPaths)
 
+  // Track which parent files include each resolved path
+  const parentMap = new Map<string, string[]>()
+
   // BFS queue: files to process for their Includes
   const queue: Array<{ parentPath: string, depth: number }> = []
   for (const cfg of configFiles) {
@@ -196,7 +200,17 @@ async function resolveIncludedFiles(
     for (const pattern of includes) {
       const resolvedPaths = resolveIncludePattern(pattern, dirname(parentPath))
       for (const resolvedPath of resolvedPaths) {
-        if (visited.has(resolvedPath) || excludeSet.has(resolvedPath))
+        if (excludeSet.has(resolvedPath))
+          continue
+
+        // Track parent relationship even if already visited (multiple parents can include same file)
+        const parents = parentMap.get(resolvedPath)
+        if (parents)
+          parents.push(parentPath)
+        else
+          parentMap.set(resolvedPath, [parentPath])
+
+        if (visited.has(resolvedPath))
           continue
         visited.add(resolvedPath)
 
@@ -217,6 +231,13 @@ async function resolveIncludedFiles(
         }
       }
     }
+  }
+
+  // Sort parent lists and attach to results
+  for (const file of result) {
+    const parents = parentMap.get(file.path)
+    if (parents && parents.length > 0)
+      file.includedBy = parents.sort()
   }
 
   return result
@@ -241,6 +262,34 @@ function parseIncludeDirectives(configPath: string): string[] {
       includes.push(match[1])
   }
   return includes
+}
+
+/**
+ * Finds the 1-based line number of the `Include` directive in `configPath`
+ * that resolves to `includedPath`. Returns undefined if not found.
+ */
+export function findIncludeLineNumber(configPath: string, includedPath: string): number | undefined {
+  let content: string
+  try {
+    content = readFileSync(configPath, 'utf8')
+  }
+  catch {
+    return undefined
+  }
+
+  const lines = content.split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim()
+    if (trimmed.startsWith('#') || trimmed === '')
+      continue
+    const match = /^Include\s+(\S+)$/i.exec(trimmed)
+    if (match) {
+      const resolved = resolveIncludePattern(match[1], dirname(configPath))
+      if (resolved.includes(includedPath))
+        return i + 1
+    }
+  }
+  return undefined
 }
 
 function resolveIncludePattern(pattern: string, configDir: string): string[] {

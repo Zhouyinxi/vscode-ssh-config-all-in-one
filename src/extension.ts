@@ -138,6 +138,9 @@ export function activate(context: ExtensionContext) {
         }
 
         if (onAccept === 'openConfig' || onAccept === 'both') {
+          // Open the file where the host config is actually defined, at the
+          // host's own line — whether that's a default config or an included
+          // (auto-detected) config file.
           if (selected.configFile && selected.lineNumber)
             await openConfigFile(selected.configFile, selected.lineNumber)
         }
