@@ -142,6 +142,22 @@
           ],
           "order": 8,
           "markdownDescription": "What happens when you select a host from the search results.\n\n- **revealInExplorer** (default): reveal the host in the SSH Explorer panel\n- **openConfig**: open the SSH config file at the host's line\n- **both**: do both"
+        },
+        "sshConfigAllInOne.copyKey.windowsUserType": {
+          "type": "string",
+          "default": "ask",
+          "enum": [
+            "ask",
+            "regular",
+            "admin"
+          ],
+          "enumDescriptions": [
+            "Ask each time whether the Windows target is a regular user or an administrator",
+            "Always treat the Windows target as a regular user",
+            "Always treat the Windows target as an administrator"
+          ],
+          "order": 9,
+          "markdownDescription": "When copying a public key to a **Windows** host, how to treat the target account. Windows administrators read keys from `C:\\ProgramData\\ssh\\administrators_authorized_keys` (per the default `Match Group administrators` rule), not `~/.ssh/authorized_keys`. Note: any account in an Administrators group counts as an administrator — the username need not be \"administrator\" (the first account created on Windows is usually an admin).\n\n- **ask** (default): prompt each time\n- **regular**: always copy to the user's `~/.ssh/authorized_keys`\n- **admin**: always treat as administrator and let you choose the destination"
         }
       }
     },

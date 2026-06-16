@@ -75,6 +75,8 @@ Host example
 - `sshConfigAllInOne.include.mode`: How to handle hosts from files discovered via `Include` directives — `merge` (add to parent), `separate` (show as own entry), or `none`. (Default: `separate`)
 - `sshConfigAllInOne.include.maxDepth`: How many levels of `Include` directives to follow — `0`, `1`, or `unlimited`. (Default: `unlimited`)
 - `sshConfigAllInOne.search.mode`: Search mode for the host explorer — `fuzzy` (multi-token, quoted phrases, prefix/suffix/exclude operators, relevance ranking) or `simple` (original substring match). (Default: `fuzzy`)
+- `sshConfigAllInOne.search.onAccept`: What happens when you select a host from the search results — `revealInExplorer` (reveal in the panel), `openConfig` (open the config file at the host definition), or `both`. (Default: `revealInExplorer`)
+- `sshConfigAllInOne.copyKey.windowsUserType`: When copying a public key to a Windows host, how to treat the target account — `ask` (prompt each time), `regular` (always copy to `~/.ssh/authorized_keys`), or `admin` (always treat as administrator and choose the destination). Administrators read keys from `C:\ProgramData\ssh\administrators_authorized_keys` by default, not the user home. (Default: `ask`)
 
 ## Tips
 
