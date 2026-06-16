@@ -336,7 +336,85 @@ async function copyPublicKeyToUnixRemote(hostName: string, publicKeyPath: string
 }
 
 /**
+ * Resolves whether a Windows target should be treated as a regular user or an
+ * administrator, honoring the `sshConfigAllInOne.copyKey.windowsUserType`
+ * setting (which can short-circuit the prompt).
+ */
+async function resolveWindowsUserType(): Promise<'regular' | 'admin' | undefined> {
+  const pref = workspace.getConfiguration('sshConfigAllInOne.copyKey').get<string>('windowsUserType', 'ask')
+  if (pref === 'regular')
+    return 'regular'
+  if (pref === 'admin')
+    return 'admin'
+
+  const choice = await window.showQuickPick(
+    [
+      { label: 'Regular user', value: 'regular' as const, description: 'member of the Users group', detail: 'Copy to %USERPROFILE%\\.ssh\\authorized_keys' },
+      {
+        label: 'Administrator',
+        value: 'admin' as const,
+        description: 'member of an Administrators group',
+        detail: 'Any account in an Administrators group counts — the username need not be "administrator". The first account created on a Windows machine is usually an admin. Choose between the user home and administrators_authorized_keys.',
+      },
+    ],
+    {
+      placeHolder: 'Is the target account a regular user or an administrator? (Any account in an Administrators group counts as admin.)',
+      title: 'Windows target account type',
+    },
+  )
+  return choice?.value
+}
+
+/**
+ * For an administrator target, asks where the public key should be written after
+ * informing the user about the default sshd_config behavior for administrators.
+ */
+async function promptWindowsAdminDestination(): Promise<'userHome' | 'programData' | undefined> {
+  window.showInformationMessage(
+    'Windows sshd_config default often contains:\n\nMatch Group administrators\n    AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys\n\nMembers of the Administrators group do NOT read ~/.ssh/authorized_keys — they only read C:\\ProgramData\\ssh\\administrators_authorized_keys.',
+  )
+
+  const choice = await window.showQuickPick(
+    [
+      { label: 'User home', value: 'userHome' as const, detail: '%USERPROFILE%\\.ssh\\authorized_keys' },
+      { label: 'administrators_authorized_keys', value: 'programData' as const, detail: 'C:\\ProgramData\\ssh\\administrators_authorized_keys' },
+    ],
+    { placeHolder: 'Where should the public key be written?', title: 'Administrator — choose destination' },
+  )
+  return choice?.value
+}
+
+/** Builds the local shell command that copies a public key to a Windows host. */
+function buildWindowsCopyScript(
+  hostName: string,
+  publicKeyPath: string,
+  isLocalWindows: boolean,
+  destination: 'userHome' | 'programData',
+): string {
+  const readCmd = isLocalWindows ? `type "${publicKeyPath}"` : `cat "${publicKeyPath}"`
+
+  if (destination === 'userHome') {
+    return isLocalWindows
+      ? `${readCmd} | ssh ${hostName} "powershell -Command \\"New-Item -ItemType Directory -Force -Path $env:USERPROFILE\\.ssh | Out-Null; $input | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys\\""`
+      : `${readCmd} | ssh ${hostName} "powershell -Command \\"New-Item -ItemType Directory -Force -Path \\$env:USERPROFILE\\.ssh | Out-Null; \\$input | Add-Content -Path \\$env:USERPROFILE\\.ssh\\authorized_keys\\""`
+  }
+
+  // administrators_authorized_keys — fix the ACL so Administrators/SYSTEM own it
+  // and inheritance is removed (required for OpenSSH to accept the file).
+  const adminsPath = 'C:\\ProgramData\\ssh\\administrators_authorized_keys'
+  const acl = `icacls ${adminsPath} /inheritance:r /grant Administrators:F /grant SYSTEM:F`
+  return isLocalWindows
+    ? `${readCmd} | ssh ${hostName} "powershell -Command \\"$input | Add-Content -Path ${adminsPath}; ${acl}\\""`
+    : `${readCmd} | ssh ${hostName} "powershell -Command \\"\\$input | Add-Content -Path ${adminsPath}; ${acl}\\""`
+}
+
+/**
  * Copies the SSH public key to a Windows remote host.
+ *
+ * For administrators, Windows reads keys from
+ * C:\ProgramData\ssh\administrators_authorized_keys (per the default
+ * `Match Group administrators` sshd_config rule) rather than the user home, so
+ * the account type and destination are resolved first.
  * @param hostName - The name of the host to copy the key to.
  * @param publicKeyPath - The path to the public key file.
  * @param isLocalWindows - Whether the local machine is Windows.
@@ -347,17 +425,24 @@ async function copyPublicKeyToWindowsRemote(hostName: string, publicKeyPath: str
     return
   }
 
+  const userType = await resolveWindowsUserType()
+  if (!userType)
+    return
+
+  let destination: 'userHome' | 'programData' = 'userHome'
+  if (userType === 'admin') {
+    const dest = await promptWindowsAdminDestination()
+    if (!dest)
+      return
+    destination = dest
+  }
+
   const terminal = createLocalTerminal('SSH Copy ID')
   terminal.show()
+  terminal.sendText(buildWindowsCopyScript(hostName, publicKeyPath, isLocalWindows, destination))
 
-  if (isLocalWindows) {
-    const script = `type "${publicKeyPath}" | ssh ${hostName} "powershell -Command \\"New-Item -ItemType Directory -Force -Path $env:USERPROFILE\\.ssh | Out-Null; $input | Add-Content -Path $env:USERPROFILE\\.ssh\\authorized_keys\\""`
-    terminal.sendText(script)
-  }
-  else {
-    const script = `cat "${publicKeyPath}" | ssh ${hostName} "powershell -Command \\"New-Item -ItemType Directory -Force -Path \\$env:USERPROFILE\\.ssh | Out-Null; \\$input | Add-Content -Path \\$env:USERPROFILE\\.ssh\\authorized_keys\\""`
-    terminal.sendText(script)
-  }
-
-  window.showInformationMessage(`Sending public key to ${hostName}. Please enter your password in the terminal.`)
+  const targetDesc = destination === 'programData'
+    ? 'C:\\ProgramData\\ssh\\administrators_authorized_keys'
+    : '~/.ssh/authorized_keys'
+  window.showInformationMessage(`Sending public key to ${hostName} (${targetDesc}). Please enter your password in the terminal.`)
 }
