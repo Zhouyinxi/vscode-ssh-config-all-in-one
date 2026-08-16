@@ -1,11 +1,12 @@
-import type { ExtensionContext, TreeDataProvider, TreeItem } from 'vscode'
-import { commands, EventEmitter, languages, Range, TextEditorRevealType, TreeItemCollapsibleState, Uri, window, workspace } from 'vscode'
+import type { ExtensionContext, TextEditor, TreeDataProvider, TreeItem } from 'vscode'
+import { commands, EventEmitter, languages, Range, TreeItemCollapsibleState, Uri, window, workspace } from 'vscode'
 import { SSHConfigFileItem } from '../models/SSHConfigFileItem'
 import { SSHFolderItem } from '../models/SSHFolderItem'
 import { SSHHostItem } from '../models/SSHHostItem'
 import { getSSHConfigFiles } from '../utils/sshConfig'
 import { getCurrentSSHFolder, getCurrentSSHHost } from '../utils/sshDetection'
 import { clearRecentCache, getRecentSSHConnections } from '../utils/sshHistory'
+import { StableEditorScrollState } from '../utils/stableEditorScrollState'
 import { isSSHConfigContent } from './sshConfigDetection'
 
 const t0 = () => performance.now()
@@ -342,6 +343,18 @@ export async function connectFolder(
   )
 }
 
+function stabilizeEditorScroll(editor: TextEditor): void {
+  const scrollState = StableEditorScrollState.capture(editor)
+  const subscription = window.onDidChangeTextEditorVisibleRanges((event) => {
+    if (event.textEditor === editor)
+      scrollState.restore(editor)
+  })
+
+  // CodeLens is provided synchronously, so layout changes are expected in the
+  // next few render frames. Do not interfere with later user scrolling.
+  setTimeout(() => subscription.dispose(), 250)
+}
+
 export async function openConfigFile(filePath: string, lineNumber?: number): Promise<void> {
   try {
     const uri = Uri.file(filePath)
@@ -362,11 +375,8 @@ export async function openConfigFile(filePath: string, lineNumber?: number): Pro
     const targetRange = targetPosition ? new Range(targetPosition, targetPosition) : undefined
     const editor = await window.showTextDocument(doc, { selection: targetRange })
 
-    if (targetRange) {
-      // CodeLens view zones are added after the editor opens. Centering leaves
-      // enough room for them without pushing the selected Host out of view.
-      editor.revealRange(targetRange, TextEditorRevealType.InCenter)
-    }
+    if (targetRange)
+      stabilizeEditorScroll(editor)
   }
   catch (error) {
     window.showErrorMessage(`Failed to open config file: ${error instanceof Error ? error.message : String(error)}`)
