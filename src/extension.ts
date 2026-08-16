@@ -15,7 +15,6 @@ import {
   SSHIncludeDiagnosticsProvider,
 } from './providers'
 import { invalidateFuseCache, searchItems } from './utils/searchHosts'
-import { buildSSHCommand } from './utils/sshCommand'
 import { parseSSHConfig } from './utils/sshConfig'
 import { getCurrentSSHHost } from './utils/sshDetection'
 
@@ -399,15 +398,19 @@ export function activate(context: ExtensionContext) {
     commands.registerCommand(
       'vscode-ssh-config-all-in-one.copySSHCommand',
       async (item: { hostName: string, description?: string, user?: string, port?: string, identityFile?: string, remoteForwards?: string[], forwardX11?: boolean }) => {
-        const cmd = buildSSHCommand({
-          host: item.hostName,
-          hostname: item.description,
-          user: item.user,
-          port: item.port,
-          identityFile: item.identityFile,
-          remoteForwards: item.remoteForwards,
-          forwardX11: item.forwardX11,
-        })
+        const target = item.description || item.hostName
+        const userPrefix = item.user ? `${item.user}@` : ''
+        let cmd = `ssh ${userPrefix}${target}`
+        if (item.port && item.port !== '22')
+          cmd += ` -p ${item.port}`
+        if (item.identityFile)
+          cmd += ` -i ${item.identityFile}`
+        for (const remoteForward of item.remoteForwards || [])
+          cmd += ` -R ${remoteForward.trim().replace(/\s+/, ':')}`
+        if (item.forwardX11 === true)
+          cmd += ' -X'
+        else if (item.forwardX11 === false)
+          cmd += ' -x'
         await env.clipboard.writeText(cmd)
         window.showInformationMessage(`Copied: ${cmd}`)
       },
