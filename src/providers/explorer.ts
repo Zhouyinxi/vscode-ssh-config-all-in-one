@@ -156,6 +156,8 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
         e.user,
         e.port,
         e.identityFile,
+        e.remoteForwards,
+        e.forwardX11,
       )
     })
 
