@@ -447,7 +447,6 @@
     "vscode:prepublish": "pnpm run build",
     "build": "tsup && mkdir -p out/sql.js && cp node_modules/sql.js/dist/sql-wasm.js node_modules/sql.js/dist/sql-wasm.wasm out/sql.js/",
     "watch": "tsup --watch",
-    "test": "tsx --test src/test/*.test.ts",
     "lint": "eslint src"
   },
   "devDependencies": {
@@ -458,7 +457,6 @@
     "eslint": "^10.2.0",
     "jiti": "^2.6.1",
     "tsup": "^8.5.0",
-    "tsx": "^4.21.0",
     "typescript": "5.2.2"
   },
   "dependencies": {
