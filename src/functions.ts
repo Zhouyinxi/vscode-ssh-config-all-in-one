@@ -1,5 +1,5 @@
 import { exec, spawn } from 'node:child_process'
-import { chmodSync, lstat, readFile, writeFileSync } from 'node:fs'
+import { chmodSync, lstat, writeFileSync } from 'node:fs'
 import { homedir, platform, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -98,30 +98,6 @@ function createLocalTerminal(name: string) {
     show: () => term.show(true),
     sendText: (text: string) => term.sendText(text, true),
   }
-}
-
-let options: Promise<Option[]>
-
-/**
- * Retrieves the options from the options.json file.
- * If the options have already been retrieved, it returns a cached Promise.
- * Otherwise, it reads the options from the file and returns a new Promise.
- * @returns A Promise that resolves to the options object.
- */
-export function getOptions() {
-  return options || (options = new Promise((resolve, reject) => {
-    readFile(join(__dirname, '../thirdparty/options.json'), { encoding: 'utf8' }, (err: NodeJS.ErrnoException | null, content: string) => {
-      err ? reject(err) : resolve(JSON.parse(content))
-    })
-  }))
-}
-
-/**
- * Retrieves the SSH configuration options.
- * @returns A promise that resolves to an array of Option objects.
- */
-export async function getSSHConfigOptions(): Promise<Option[]> {
-  return await getOptions()
 }
 
 export function openUserConfig() {
