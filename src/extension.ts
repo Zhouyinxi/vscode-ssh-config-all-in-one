@@ -1,4 +1,6 @@
 import type { Disposable, ExtensionContext } from 'vscode'
+import type { SSHHostItem } from './models/SSHHostItem'
+import type { HostPickItem } from './utils/searchHosts'
 import { commands, env, Position, Range, SnippetString, Uri, window, workspace } from 'vscode'
 import { copyPublicKey, openUserConfig } from './functions'
 import {
@@ -88,7 +90,7 @@ export function activate(context: ExtensionContext) {
       const allHosts = await parseSSHConfig()
       invalidateFuseCache()
 
-      const toItem = (h: typeof allHosts[number]) => ({
+      const toItem = (h: typeof allHosts[number]): HostPickItem => ({
         label: h.host,
         description: h.hostname,
         detail: h.configFile,
@@ -397,14 +399,8 @@ export function activate(context: ExtensionContext) {
   disposable.push(
     commands.registerCommand(
       'vscode-ssh-config-all-in-one.copySSHCommand',
-      async (item: { hostName: string, description?: string, user?: string, port?: string, identityFile?: string }) => {
-        const target = item.description || item.hostName
-        const userPrefix = item.user ? `${item.user}@` : ''
-        let cmd = `ssh ${userPrefix}${target}`
-        if (item.port && item.port !== '22')
-          cmd += ` -p ${item.port}`
-        if (item.identityFile)
-          cmd += ` -i ${item.identityFile}`
+      async (item: SSHHostItem) => {
+        const cmd = item.sshHost.toSSHCommand()
         await env.clipboard.writeText(cmd)
         window.showInformationMessage(`Copied: ${cmd}`)
       },

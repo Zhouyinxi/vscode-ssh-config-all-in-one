@@ -1,18 +1,13 @@
+import type { SSHHost } from './SSHHost'
 import { ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState } from 'vscode'
 
 export class SSHHostItem extends TreeItem {
   constructor(
-    public readonly hostName: string,
-    public readonly description: string | undefined,
-    public readonly configFile: string,
-    public readonly lineNumber: number | undefined,
+    public readonly sshHost: SSHHost,
     hasRecentFolders: boolean,
     isConnected: boolean = false,
     isCollapsed: boolean = false,
     nonce?: number,
-    public readonly user?: string,
-    public readonly port?: string,
-    public readonly identityFile?: string,
   ) {
     // Determine collapsible state based on whether it has folders and collapse state
     let state: TreeItemCollapsibleState
@@ -26,20 +21,32 @@ export class SSHHostItem extends TreeItem {
       state = TreeItemCollapsibleState.Expanded
     }
 
-    super(hostName, state)
-    this.id = nonce != null ? `${configFile}:${hostName}::${nonce}` : `${configFile}:${hostName}`
+    super(sshHost.host, state)
+    this.id = nonce != null ? `${sshHost.configFile}:${sshHost.host}::${nonce}` : `${sshHost.configFile}:${sshHost.host}`
     this.contextValue = isConnected ? 'host-connected' : 'host'
 
     // Use 'vm-active' icon with green color for connected hosts
     if (isConnected) {
       this.iconPath = new ThemeIcon('vm-active', new ThemeColor('charts.green'))
-      this.tooltip = `SSH Host: ${hostName} (Connected)`
+      this.tooltip = `SSH Host: ${sshHost.host} (Connected)`
     }
     else {
       this.iconPath = new ThemeIcon('vm')
-      this.tooltip = `SSH Host: ${hostName}`
+      this.tooltip = `SSH Host: ${sshHost.host}`
     }
 
-    this.description = description
+    this.description = sshHost.hostname
+  }
+
+  get hostName(): string {
+    return this.sshHost.host
+  }
+
+  get configFile(): string {
+    return this.sshHost.configFile
+  }
+
+  get lineNumber(): number {
+    return this.sshHost.lineNumber
   }
 }

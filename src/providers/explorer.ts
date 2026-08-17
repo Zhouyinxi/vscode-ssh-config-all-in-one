@@ -6,6 +6,7 @@ import { SSHHostItem } from '../models/SSHHostItem'
 import { getSSHConfigFiles } from '../utils/sshConfig'
 import { getCurrentSSHFolder, getCurrentSSHHost } from '../utils/sshDetection'
 import { clearRecentCache, getRecentSSHConnections } from '../utils/sshHistory'
+import { isSSHConfigContent } from './sshConfigDetection'
 
 const t0 = () => performance.now()
 const dt = (start: number) => `${(performance.now() - start).toFixed(1)}ms`
@@ -145,17 +146,11 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
         : false
 
       return new SSHHostItem(
-        e.host,
-        e.hostname,
-        e.configFile || configFile.filePath,
-        e.lineNumber,
+        e,
         hasRecent,
         isConnected,
         this.allCollapsed,
         this._nonce,
-        e.user,
-        e.port,
-        e.identityFile,
       )
     })
 
@@ -266,7 +261,7 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
 
     if (element instanceof SSHHostItem) {
       const folders = this.recentFolders.get(element.hostName)
-        || this.recentFolders.get(element.description || '')
+        || this.recentFolders.get(element.sshHost.hostname || '')
         || []
 
       if (folders.length === 0)
@@ -353,20 +348,7 @@ export async function openConfigFile(filePath: string, lineNumber?: number): Pro
     const doc = editor.document
 
     if (doc.languageId === 'plaintext') {
-      const text = doc.getText()
-      const BLOCK_RE = /^\s*(?:Host|Match)\s+\S/
-      const KEYWORD_RE = /^\s+(?:HostName|User|Port|IdentityFile|ProxyCommand|ProxyJump|ForwardAgent|StrictHostKeyChecking|AddKeysToAgent|UseKeychain|ServerAliveInterval|ServerAliveCountMax|ConnectTimeout|Compression|LogLevel|Include)\b/i
-      let hasBlock = false
-      let hasKeyword = false
-      for (const line of text.split('\n').slice(0, 100)) {
-        if (BLOCK_RE.test(line))
-          hasBlock = true
-        if (KEYWORD_RE.test(line))
-          hasKeyword = true
-        if (hasBlock && hasKeyword)
-          break
-      }
-      if (hasBlock && hasKeyword) {
+      if (isSSHConfigContent(doc.getText())) {
         try {
           await languages.setTextDocumentLanguage(doc, 'ssh_config')
         }

@@ -1,94 +1,12 @@
 import type { Disposable } from 'vscode'
 import { languages, workspace } from 'vscode'
+import { SSH_CONFIG_KEYWORDS } from '../models/SSHHost'
 
-const SSH_KEYWORDS = [
-  'HostName',
-  'User',
-  'Port',
-  'IdentityFile',
-  'ProxyCommand',
-  'ProxyJump',
-  'ForwardAgent',
-  'ForwardX11',
-  'LocalForward',
-  'RemoteForward',
-  'DynamicForward',
-  'StrictHostKeyChecking',
-  'UserKnownHostsFile',
-  'AddKeysToAgent',
-  'UseKeychain',
-  'HostKeyAlgorithms',
-  'PubkeyAuthentication',
-  'PasswordAuthentication',
-  'GSSAPIAuthentication',
-  'ConnectTimeout',
-  'ServerAliveInterval',
-  'ServerAliveCountMax',
-  'Compression',
-  'LogLevel',
-  'SendEnv',
-  'SetEnv',
-  'UpdateHostKeys',
-  'CanonicalDomains',
-  'CanonicalizeHostname',
-  'Match',
-  'Include',
-  'IgnoreUnknown',
-  'IdentitiesOnly',
-  'PreferredAuthentications',
-  'AddressFamily',
-  'BatchMode',
-  'BindAddress',
-  'CanonicalizeFallbackLocal',
-  'CanonicalizeMaxDots',
-  'ChallengeResponseAuthentication',
-  'CheckHostIP',
-  'Cipher',
-  'Ciphers',
-  'ClearAllForwardings',
-  'ConnectionAttempts',
-  'ControlMaster',
-  'ControlPath',
-  'ControlPersist',
-  'EnableSSHKeysign',
-  'EscapeChar',
-  'ExitOnForwardFailure',
-  'FingerprintHash',
-  'GatewayPorts',
-  'GlobalKnownHostsFile',
-  'HostbasedAuthentication',
-  'HostKeyAlias',
-  'IPQoS',
-  'KbdInteractiveAuthentication',
-  'KexAlgorithms',
-  'LocalCommand',
-  'MACs',
-  'NoHostAuthenticationForLocalhost',
-  'NumberOfPasswordPrompts',
-  'PermitLocalCommand',
-  'PKCS11Provider',
-  'Protocol',
-  'ProxyUseFdpass',
-  'RekeyLimit',
-  'RequestTTY',
-  'RevokedHostKeys',
-  'StreamLocalBindMask',
-  'StreamLocalBindUnlink',
-  'TCPKeepAlive',
-  'Tunnel',
-  'TunnelDevice',
-  'UsePrivilegedPort',
-  'VerifyHostKeyDNS',
-  'VisualHostKey',
-  'XAuthLocation',
-]
-
-// eslint-disable-next-line regexp/no-unused-capturing-group
-const KEYWORD_RE = new RegExp(`^\\s+(${SSH_KEYWORDS.join('|')})\\b`, 'i')
+const KEYWORD_RE = new RegExp(`^\\s+(?:${SSH_CONFIG_KEYWORDS.join('|')})\\b`, 'i')
 const BLOCK_RE = /^\s*(?:Host|Match)\s+\S/
 const MAX_CHECK_LINES = 100
 
-function isSSHConfigContent(text: string): boolean {
+export function isSSHConfigContent(text: string): boolean {
   let hasBlock = false
   let hasKeyword = false
 
