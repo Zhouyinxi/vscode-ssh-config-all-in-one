@@ -1,11 +1,12 @@
-import type { ExtensionContext, TreeDataProvider, TreeItem } from 'vscode'
-import { commands, EventEmitter, languages, TreeItemCollapsibleState, Uri, window, workspace } from 'vscode'
+import type { ExtensionContext, TextEditor, TreeDataProvider, TreeItem } from 'vscode'
+import { commands, EventEmitter, languages, Range, TreeItemCollapsibleState, Uri, window, workspace } from 'vscode'
 import { SSHConfigFileItem } from '../models/SSHConfigFileItem'
 import { SSHFolderItem } from '../models/SSHFolderItem'
 import { SSHHostItem } from '../models/SSHHostItem'
 import { getSSHConfigFiles } from '../utils/sshConfig'
 import { getCurrentSSHFolder, getCurrentSSHHost } from '../utils/sshDetection'
 import { clearRecentCache, getRecentSSHConnections } from '../utils/sshHistory'
+import { StableEditorScrollState } from '../utils/stableEditorScrollState'
 import { isSSHConfigContent } from './sshConfigDetection'
 
 const t0 = () => performance.now()
@@ -94,6 +95,7 @@ export class SSHExplorerProvider implements TreeDataProvider<TreeItem> {
       this.ensureCurrentHost(),
       this.ensureRecentFolders(),
     ])
+    this.parsedConfigFilesCache = configFiles
     // console.log(`[SSH Config] getSSHConfigFiles: ${dt(ts)}, ${configFiles.length} files`)
 
     const ts2 = t0()
@@ -341,26 +343,40 @@ export async function connectFolder(
   )
 }
 
+function stabilizeEditorScroll(editor: TextEditor): void {
+  const scrollState = StableEditorScrollState.capture(editor)
+  const subscription = window.onDidChangeTextEditorVisibleRanges((event) => {
+    if (event.textEditor === editor)
+      scrollState.restore(editor)
+  })
+
+  // CodeLens is provided synchronously, so layout changes are expected in the
+  // next few render frames. Do not interfere with later user scrolling.
+  setTimeout(() => subscription.dispose(), 250)
+}
+
 export async function openConfigFile(filePath: string, lineNumber?: number): Promise<void> {
   try {
     const uri = Uri.file(filePath)
-    const editor = await window.showTextDocument(uri)
-    const doc = editor.document
+    let doc = await workspace.openTextDocument(uri)
 
     if (doc.languageId === 'plaintext') {
       if (isSSHConfigContent(doc.getText())) {
         try {
-          await languages.setTextDocumentLanguage(doc, 'ssh_config')
+          doc = await languages.setTextDocumentLanguage(doc, 'ssh_config')
         }
         catch { }
       }
     }
 
-    if (lineNumber && lineNumber > 0) {
-      const position = doc.lineAt(lineNumber - 1).range.start
-      editor.selection = new (await import('vscode')).Selection(position, position)
-      editor.revealRange(doc.lineAt(lineNumber - 1).range)
-    }
+    const targetPosition = lineNumber && lineNumber > 0
+      ? doc.lineAt(lineNumber - 1).range.start
+      : undefined
+    const targetRange = targetPosition ? new Range(targetPosition, targetPosition) : undefined
+    const editor = await window.showTextDocument(doc, { selection: targetRange })
+
+    if (targetRange)
+      stabilizeEditorScroll(editor)
   }
   catch (error) {
     window.showErrorMessage(`Failed to open config file: ${error instanceof Error ? error.message : String(error)}`)
