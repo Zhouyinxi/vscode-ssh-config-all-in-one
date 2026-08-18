@@ -2,21 +2,12 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { env, workspace } from 'vscode'
-
-export interface HostEntry {
-  host: string
-  hostname?: string
-  user?: string
-  port?: string
-  identityFile?: string
-  configFile?: string
-  lineNumber?: number
-}
+import { SSHHost } from '../models/SSHHost'
 
 export interface SSHConfigFile {
   path: string
   label: string
-  hosts: HostEntry[]
+  hosts: SSHHost[]
   isCustom?: boolean
   isAutoDetected?: boolean
   includedBy?: string[]
@@ -157,9 +148,8 @@ async function mergeIncludedHosts(
 
         const hosts = await parseSSHConfigFile(resolvedPath)
         // Merge hosts into the parent config file, correcting configFile reference
-        for (const host of hosts) {
-          cfg.hosts.push({ ...host, configFile: cfg.path })
-        }
+        for (const host of hosts)
+          cfg.hosts.push(host.withConfigFile(cfg.path))
 
         // Recurse into this included file's own Includes
         if (maxDepth === Infinity || depth < maxDepth) {
@@ -341,7 +331,7 @@ function globToRegex(glob: string): RegExp {
   return new RegExp(`^${pattern}$`)
 }
 
-async function parseSSHConfigFile(configPath: string): Promise<HostEntry[]> {
+async function parseSSHConfigFile(configPath: string): Promise<SSHHost[]> {
   let content: string
   try {
     content = readFileSync(configPath, 'utf8')
@@ -350,60 +340,10 @@ async function parseSSHConfigFile(configPath: string): Promise<HostEntry[]> {
     return []
   }
 
-  const hosts: HostEntry[] = []
-  let currentHost: HostEntry | null = null
-  let lineNumber = 0
-
-  for (const line of content.split('\n')) {
-    lineNumber++
-    const trimmed = line.trim()
-    if (trimmed.startsWith('#') || trimmed === '')
-      continue
-
-    const matchHost = /^Host\s+(\S.*)$/i.exec(trimmed)
-    if (matchHost) {
-      if (currentHost)
-        hosts.push(currentHost)
-      const name = matchHost[1].trim()
-      if (name.includes('*') || name.includes('?'))
-        continue
-      currentHost = {
-        host: name,
-        configFile: configPath,
-        lineNumber,
-      }
-      continue
-    }
-
-    if (currentHost) {
-      const matchHostname = /^\s*HostName\s+(\S.*)$/i.exec(trimmed)
-      if (matchHostname) {
-        currentHost.hostname = matchHostname[1].trim()
-        continue
-      }
-      const matchUser = /^\s*User\s+(\S.*)$/i.exec(trimmed)
-      if (matchUser) {
-        currentHost.user = matchUser[1].trim()
-        continue
-      }
-      const matchPort = /^\s*Port\s+(\S.*)$/i.exec(trimmed)
-      if (matchPort) {
-        currentHost.port = matchPort[1].trim()
-        continue
-      }
-      const matchIdentityFile = /^\s*IdentityFile\s+(\S.*)$/i.exec(trimmed)
-      if (matchIdentityFile)
-        currentHost.identityFile = matchIdentityFile[1].trim()
-    }
-  }
-
-  if (currentHost)
-    hosts.push(currentHost)
-
-  return hosts
+  return SSHHost.parseConfig(content, configPath)
 }
 
-export async function parseSSHConfig(): Promise<HostEntry[]> {
+export async function parseSSHConfig(): Promise<SSHHost[]> {
   const configFiles = await getSSHConfigFiles()
   return configFiles.flatMap(file => file.hosts)
 }

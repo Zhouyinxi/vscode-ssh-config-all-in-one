@@ -5,7 +5,7 @@ import type {
   Position,
   TextDocument,
 } from 'vscode'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import {
@@ -15,16 +15,8 @@ import {
   MarkdownString,
   SnippetString,
 } from 'vscode'
+import { SSH_CONFIG_OPTIONS } from '../models/SSHHost'
 import { DOCUMENT_PROVIDER } from './utils'
-
-interface Option {
-  label: string
-  documentation: string
-}
-
-const options: Option[] = JSON.parse(
-  readFileSync(join(__dirname, '..', 'thirdparty', 'options.json'), 'utf8'),
-)
 
 const blockKeywords = new Set(['Host', 'Match'])
 const topLevelKeywords = ['Host', 'Match', 'Include']
@@ -86,7 +78,7 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
 
     if (!inBlock) {
       for (const label of topLevelKeywords) {
-        const opt = options.find(o => o.label === label)
+        const opt = SSH_CONFIG_OPTIONS.find(o => o.label === label)
         const item = new CompletionItem(label, CompletionItemKind.Keyword)
         item.documentation = new MarkdownString(opt?.documentation || '')
         item.sortText = `0-${label}`
@@ -97,7 +89,7 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
       items.push(this.createIncusSnippet())
     }
     else {
-      for (const opt of options) {
+      for (const opt of SSH_CONFIG_OPTIONS) {
         if (blockKeywords.has(opt.label))
           continue
         const item = new CompletionItem(opt.label, CompletionItemKind.Property)
