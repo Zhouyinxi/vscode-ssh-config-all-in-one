@@ -53,7 +53,7 @@ export async function getSSHConfigFiles(): Promise<SSHConfigFile[]> {
       if (excludeSet.has(path))
         return null
       const hosts = await parseSSHConfigFile(path)
-      return hosts.length > 0 ? { path, label, hosts } : null
+      return existsSync(path) ? { path, label, hosts } : null
     }),
   )
 
@@ -68,7 +68,7 @@ export async function getSSHConfigFiles(): Promise<SSHConfigFile[]> {
       additionalFiles.map(async (rawPath) => {
         const path = resolveTilde(rawPath)
         const hosts = await parseSSHConfigFile(path)
-        if (hosts.length === 0)
+        if  (!existsSync(path))
           return null
         return {
           path,
