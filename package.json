@@ -158,6 +158,13 @@
           ],
           "order": 9,
           "markdownDescription": "When copying a public key to a **Windows** host, how to treat the target account. Windows administrators read keys from `C:\\ProgramData\\ssh\\administrators_authorized_keys` (per the default `Match Group administrators` rule), not `~/.ssh/authorized_keys`. Note: any account in an Administrators group counts as an administrator — the username need not be \"administrator\" (the first account created on Windows is usually an admin).\n\n- **ask** (default): prompt each time\n- **regular**: always copy to the user's `~/.ssh/authorized_keys`\n- **admin**: always treat as administrator and let you choose the destination"
+        },
+        "sshConfigAllInOne.config.fileAliases": {
+          "type": "object",
+          "default": {},
+          "order": 10,
+          "additionalProperties": { "type": "string" },
+          "markdownDescription": "给 SSH 配置文件设置自定义显示名。key 是文件路径（支持 `~`),value 是显示名。例如 `{ \"~/.ssh/config.d/vps.conf\": \"VPS 服务器\" }`"
         }
       }
     },
@@ -289,6 +296,10 @@
       {
         "command": "vscode-ssh-config-all-in-one.copySSHCommand",
         "title": "Copy SSH Command"
+      },
+      {
+        "command": "vscode-ssh-config-all-in-one.setFileAlias",
+        "title": "Set Alias..."
       }
     ],
     "menus": {
@@ -354,6 +365,11 @@
           "command": "vscode-ssh-config-all-in-one.ignoreConfigFile",
           "when": "view == vscode-ssh-config-all-in-one-hosts && viewItem == config-file-auto",
           "group": "3_remove@1"
+        },
+        {
+          "command": "vscode-ssh-config-all-in-one.setFileAlias",
+          "when": "view == vscode-ssh-config-all-in-one-hosts && viewItem == config-file-auto",
+          "group": "2_edit@1"
         },
         {
           "command": "vscode-ssh-config-all-in-one.openHostInConfig",
