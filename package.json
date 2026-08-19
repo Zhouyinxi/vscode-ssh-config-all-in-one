@@ -164,7 +164,7 @@
           "default": {},
           "order": 10,
           "additionalProperties": { "type": "string" },
-          "markdownDescription": "给 SSH 配置文件设置自定义显示名。key 是文件路径（支持 `~`),value 是显示名。例如 `{ \"~/.ssh/config.d/vps.conf\": \"VPS 服务器\" }`"
+          "markdownDescription": "Set a custom display name for SSH config files. Key is the file path (supports `~`), value is the display name. Example: `{ \"~/.ssh/config.d/vps.conf\": \"VPS Server\" }`"
         }
       }
     },
