@@ -372,6 +372,11 @@
           "group": "2_edit@1"
         },
         {
+          "command": "vscode-ssh-config-all-in-one.setFileAlias",
+          "when": "view == vscode-ssh-config-all-in-one-hosts && viewItem == config-file-custom",
+          "group": "2_edit@1"
+        },
+        {
           "command": "vscode-ssh-config-all-in-one.openHostInConfig",
           "when": "view == vscode-ssh-config-all-in-one-hosts && viewItem =~ /host/",
           "group": "inline@1"

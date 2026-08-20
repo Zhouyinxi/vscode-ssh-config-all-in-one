@@ -73,15 +73,17 @@ export async function getSSHConfigFiles(): Promise<SSHConfigFile[]> {
 
   // Load additional config files from settings
   if (additionalFiles.length > 0) {
+    const aliases = getFileAliases()
     const additionalResults = await Promise.all(
       additionalFiles.map(async (rawPath) => {
         const path = resolveTilde(rawPath)
         const hosts = await parseSSHConfigFile(path)
         if  (!existsSync(path))
           return null
+        const displayName = aliases[path] || basename(path)
         return {
           path,
-          label: `${basename(path)} (${rawPath})`,
+          label: `${displayName} (${rawPath})`,
           hosts,
           isCustom: true,
         }
@@ -222,7 +224,7 @@ async function resolveIncludedFiles(
 
         result.push({
           path: resolvedPath,
-          label: `${displayName} (${resolvedPath.replace(homedir(), '~')})`,
+          label: `${displayName} (${resolvedPath.replace(homedir(), '~')})(auto-detected)`,
           hosts,
           isAutoDetected: true,
         })
