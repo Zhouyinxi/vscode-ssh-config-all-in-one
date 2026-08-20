@@ -36,6 +36,15 @@ function getConfigSettings() {
   }
 }
 
+function getFileAliases(): Record<string, string> {
+  const cfg = workspace.getConfiguration('sshConfigAllInOne.config')
+  const raw = cfg.get<Record<string, string>>('fileAliases', {})
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(raw))
+    result[resolveTilde(key)] = value
+  return result
+}
+
 export async function getSSHConfigFiles(): Promise<SSHConfigFile[]> {
   const configFiles: SSHConfigFile[] = []
   const { additionalFiles, excludeDefaultFiles } = getConfigSettings()
@@ -64,15 +73,17 @@ export async function getSSHConfigFiles(): Promise<SSHConfigFile[]> {
 
   // Load additional config files from settings
   if (additionalFiles.length > 0) {
+    const aliases = getFileAliases()
     const additionalResults = await Promise.all(
       additionalFiles.map(async (rawPath) => {
         const path = resolveTilde(rawPath)
         const hosts = await parseSSHConfigFile(path)
         if  (!existsSync(path))
           return null
+        const displayName = aliases[path] || basename(path)
         return {
           path,
-          label: `${basename(path)} (${rawPath})`,
+          label: `${displayName} (${rawPath})`,
           hosts,
           isCustom: true,
         }
@@ -169,6 +180,7 @@ async function resolveIncludedFiles(
   excludeSet: Set<string>,
   maxDepth: number,
 ): Promise<SSHConfigFile[]> {
+  const aliases = getFileAliases()
   const result: SSHConfigFile[] = []
   const visited = new Set(knownPaths)
 
@@ -208,9 +220,11 @@ async function resolveIncludedFiles(
         if (hosts.length === 0)
           continue
 
+        const displayName = aliases[resolvedPath] || basename(resolvedPath)
+
         result.push({
           path: resolvedPath,
-          label: `${basename(resolvedPath)} (auto-detected)`,
+          label: `${displayName} (${resolvedPath.replace(homedir(), '~')})(auto-detected)`,
           hosts,
           isAutoDetected: true,
         })

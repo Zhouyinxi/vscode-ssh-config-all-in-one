@@ -1,5 +1,6 @@
 import type { Disposable, ExtensionContext } from 'vscode'
 import type { SSHHostItem } from './models/SSHHostItem'
+import type { SSHConfigFileItem } from './models/SSHConfigFileItem'
 import type { HostPickItem } from './utils/searchHosts'
 import { commands, env, Position, Range, SnippetString, Uri, window, workspace } from 'vscode'
 import { copyPublicKey, openUserConfig } from './functions'
@@ -444,6 +445,29 @@ export function activate(context: ExtensionContext) {
         if (current.includes(item.filePath))
           return
         await cfg.update('excludeDefaultFiles', [...current, item.filePath], true)
+        explorerProvider.refresh()
+      },
+    ),
+  )
+   // Set custom alias for config file
+  disposable.push(
+    commands.registerCommand(
+      'vscode-ssh-config-all-in-one.setFileAlias',
+      async (item: SSHConfigFileItem) => {
+        if (!item?.filePath) {
+          window.showErrorMessage('Please right-click a config file to set alias')
+          return
+        }
+        const alias = await window.showInputBox({
+          prompt: `Enter alias for ${item.filePath}`,
+        })
+        if (!alias)
+          return
+
+        const cfg = workspace.getConfiguration('sshConfigAllInOne.config')
+        const aliases = cfg.get<Record<string, string>>('fileAliases', {})
+        await cfg.update('fileAliases', { ...aliases, [item.filePath]: alias }, true)
+
         explorerProvider.refresh()
       },
     ),
