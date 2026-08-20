@@ -2,7 +2,7 @@
   "name": "vscode-ssh-config-all-in-one",
   "displayName": "SSH Config All In One",
   "description": "Enhanced SSH config editing, providing autocompletion, formatting, hover support, and Quick Connect actions to ms-vscode-remote.remote-ssh.",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "publisher": "hnrobert",
   "icon": "docs/images/icon.png",
   "license": "Apache-2.0",
@@ -163,7 +163,9 @@
           "type": "object",
           "default": {},
           "order": 10,
-          "additionalProperties": { "type": "string" },
+          "additionalProperties": {
+            "type": "string"
+          },
           "markdownDescription": "Set a custom display name for SSH config files. Key is the file path (supports `~`), value is the display name. Example: `{ \"~/.ssh/config.d/vps.conf\": \"VPS Server\" }`"
         }
       }
