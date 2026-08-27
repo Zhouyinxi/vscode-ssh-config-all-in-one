@@ -16,7 +16,7 @@ export interface SSHConfigFile {
 type IncludeMode = 'merge' | 'separate' | 'none'
 type IncludeDepth = '0' | '1' | 'unlimited'
 
-function resolveTilde(p: string): string {
+export function resolveTilde(p: string): string {
   return p.startsWith('~/') ? join(homedir(), p.slice(2)) : p
 }
 
