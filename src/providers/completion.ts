@@ -57,7 +57,7 @@ function resolveIncludeBasePath(partial: string): { dir: string, prefix: string 
 
 export class SSHCompletionItemsProvider implements CompletionItemProvider {
   constructor(disposables: Disposable[]) {
-    disposables.push(languages.registerCompletionItemProvider(DOCUMENT_PROVIDER, this, ' ', '\n', '/', '~'))
+    disposables.push(languages.registerCompletionItemProvider(DOCUMENT_PROVIDER, this, ' ', '/', '~'))
   }
 
   async provideCompletionItems(document: TextDocument, position: Position): Promise<CompletionItem[] | undefined> {
@@ -66,7 +66,8 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
 
     if (/^\s*#/.test(prefix))
       return undefined
-
+    if (/^\s*Host\s/i.test(prefix))
+      return undefined
     // Check if we're typing a path after Include
     const includeMatch = INCLUDE_RE.exec(prefix.trimEnd())
     if (includeMatch) {
