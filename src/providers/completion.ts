@@ -49,12 +49,11 @@ const ENUM_VALUES_LOWER: ReadonlyMap<string, readonly string[]> = new Map(
 )
 
 function isInHostBlock(document: TextDocument, line: number): boolean {
-  for (let i = line - 1; i >= 0; i--) {
-    const text = document.lineAt(i).text
-    if (/^\s*$/.test(text))
-      continue
-    return /^\s/.test(text) || /^(?:Host|Match)\s/i.test(text)
-  }
+  const currentLine = document.lineAt(line).text
+  if (/^\s*(?:Host|Match)\s/i.test(currentLine))
+    return false
+  if (/^\s/.test(currentLine))
+    return true
   return false
 }
 
@@ -83,7 +82,7 @@ function resolveIncludeBasePath(partial: string): { dir: string, prefix: string 
 
 export class SSHCompletionItemsProvider implements CompletionItemProvider {
   constructor(disposables: Disposable[]) {
-    disposables.push(languages.registerCompletionItemProvider(DOCUMENT_PROVIDER, this, '/', '~'))
+    disposables.push(languages.registerCompletionItemProvider(DOCUMENT_PROVIDER, this, ' ', '/', '~'))
   }
 
   async provideCompletionItems(document: TextDocument, position: Position): Promise<CompletionItem[] | undefined> {
@@ -121,6 +120,7 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
         const opt = SSH_CONFIG_OPTIONS.find(o => o.label === label)
         const item = new CompletionItem(label, CompletionItemKind.Keyword)
         item.documentation = new MarkdownString(opt?.documentation || '')
+        item.insertText = `${label} `
         item.sortText = `0-${label}`
         items.push(item)
       }
@@ -129,8 +129,11 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
       items.push(this.createIncusSnippet())
     }
     else {
+      const currentWord = prefix.trim()
       for (const opt of SSH_CONFIG_OPTIONS) {
         if (blockKeywords.has(opt.label))
+          continue
+        if (currentWord === opt.label)
           continue
         const item = new CompletionItem(opt.label, CompletionItemKind.Property)
         item.documentation = new MarkdownString(opt.documentation)
