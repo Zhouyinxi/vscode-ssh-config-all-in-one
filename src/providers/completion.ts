@@ -43,6 +43,11 @@ const ENUM_VALUES: Record<string, readonly string[]> = {
   UseKeychain: ['yes', 'no'],
 }
 
+// ssh_config keys are case-insensitive; map lowercase spellings to their enum values
+const ENUM_VALUES_LOWER: ReadonlyMap<string, readonly string[]> = new Map(
+  Object.entries(ENUM_VALUES).map(([key, values]) => [key.toLowerCase(), values]),
+)
+
 function isInHostBlock(document: TextDocument, line: number): boolean {
   for (let i = line - 1; i >= 0; i--) {
     const text = document.lineAt(i).text
@@ -97,7 +102,7 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
 
     const valueMatch = /^\s*(\w+)\s+$/.exec(prefix)
     if (valueMatch) {
-      const values = ENUM_VALUES[valueMatch[1]]
+      const values = ENUM_VALUES_LOWER.get(valueMatch[1].toLowerCase())
       if (values) {
         return values.map((v) => {
           const item = new CompletionItem(v, CompletionItemKind.Value)

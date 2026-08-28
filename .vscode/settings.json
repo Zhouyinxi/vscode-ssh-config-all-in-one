@@ -23,10 +23,12 @@
         "opensshremotes",
         "PROGRAMDATA",
         "softprops",
+        "SSHFP",
         "thirdparty",
-        "vscdb"
+        "vscdb",
+        "xauth"
     ],
-    "markdownlint.config": {
-        "no-inline-html": false
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
     }
 }
