@@ -197,43 +197,9 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
 
     return items
   }
-
-  private getInsertText(label: string): SnippetString | string {
-    // Keys with enum values: insert "Key + space" only (values are triggered via command)
-    if (ENUM_VALUES[label])
-      return `${label} `
-
-    // Keys with placeholders: keep the placeholder snippet
-    switch (label) {
-      case 'HostName':
-        return new SnippetString('HostName ${1:hostname}')
-      case 'User':
-        return new SnippetString('User ${1:user}')
-      case 'Port':
-        return new SnippetString('Port ${1:22}')
-      case 'IdentityFile':
-        return new SnippetString('IdentityFile ${1:~/.ssh/id_rsa}')
-      case 'ProxyCommand':
-        return new SnippetString('ProxyCommand ${1:nc -X 5 -x localhost:1080 %h %p}')
-      case 'ProxyJump':
-        return new SnippetString('ProxyJump ${1:jump-host}')
-      case 'Include':
-        return new SnippetString('Include ${1:~/.ssh/config.d/*.conf}')
-      case 'LocalForward':
-        return new SnippetString('LocalForward ${1:8080} ${2:localhost:80}')
-      case 'RemoteForward':
-        return new SnippetString('RemoteForward ${1:8080} ${2:localhost:80}')
-      case 'DynamicForward':
-        return new SnippetString('DynamicForward ${1:1080}')
-      case 'ServerAliveInterval':
-        return new SnippetString('ServerAliveInterval ${1:60}')
-      case 'ServerAliveCountMax':
-        return new SnippetString('ServerAliveCountMax ${1:3}')
-      case 'ConnectTimeout':
-        return new SnippetString('ConnectTimeout ${1:10}')
-      default:
-        return `${label} `
-    }
+  
+  private getInsertText(label: string): string {
+    return `${label} `
   }
 
   private createHostSnippet(): CompletionItem {
