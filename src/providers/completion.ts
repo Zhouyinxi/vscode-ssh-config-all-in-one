@@ -197,7 +197,7 @@ export class SSHCompletionItemsProvider implements CompletionItemProvider {
 
     return items
   }
-  
+
   private getInsertText(label: string): string {
     return `${label} `
   }
